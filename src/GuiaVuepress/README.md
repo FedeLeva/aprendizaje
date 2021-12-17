@@ -183,7 +183,7 @@ Es para compilarlo.
 
 1. Compilarlo
 2. Creamos un repositorio en github con el mismo nombre que pusimos en base
-3. Hacemos un init en el proyecto
+3. Hacemos un init en el proyecto(carpeta docs)
 4. Fijarse que la carpeta dist y node modules este ignorado
 5. en Source de page te fijas que esta en la ruta que especificaste en el comando dest
 :::tip

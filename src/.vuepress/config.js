@@ -37,7 +37,8 @@ module.exports = {
         'basico' , 
         'basico-2',
         'objeto' ,
-        'DOM'
+        'DOM' , 
+        'array'
       ] , 
       '/GuiaVuepress/' : [
         ''
