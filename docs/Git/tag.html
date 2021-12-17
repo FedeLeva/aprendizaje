@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tag | Guias</title>
+    <meta name="generator" content="VuePress 1.8.2">
+    
+    <meta name="description" content="Descripcion">
+    <meta name="theme-color" content="#3eaf7c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <link rel="preload" href="/aprendizaje/assets/css/0.styles.5e6ce45c.css" as="style"><link rel="preload" href="/aprendizaje/assets/js/app.88bf49cf.js" as="script"><link rel="preload" href="/aprendizaje/assets/js/2.c431ec36.js" as="script"><link rel="preload" href="/aprendizaje/assets/js/15.0dc76b53.js" as="script"><link rel="prefetch" href="/aprendizaje/assets/js/10.e744f38e.js"><link rel="prefetch" href="/aprendizaje/assets/js/11.1da570f8.js"><link rel="prefetch" href="/aprendizaje/assets/js/12.2d9c2fa4.js"><link rel="prefetch" href="/aprendizaje/assets/js/13.9d5c8d4f.js"><link rel="prefetch" href="/aprendizaje/assets/js/14.ac7318bb.js"><link rel="prefetch" href="/aprendizaje/assets/js/16.aa75ddb0.js"><link rel="prefetch" href="/aprendizaje/assets/js/17.988c2716.js"><link rel="prefetch" href="/aprendizaje/assets/js/18.7e617bfe.js"><link rel="prefetch" href="/aprendizaje/assets/js/19.39233632.js"><link rel="prefetch" href="/aprendizaje/assets/js/20.74de82a5.js"><link rel="prefetch" href="/aprendizaje/assets/js/21.58959786.js"><link rel="prefetch" href="/aprendizaje/assets/js/22.9388563a.js"><link rel="prefetch" href="/aprendizaje/assets/js/3.c09ea3cb.js"><link rel="prefetch" href="/aprendizaje/assets/js/4.7b66cd35.js"><link rel="prefetch" href="/aprendizaje/assets/js/5.a396fb32.js"><link rel="prefetch" href="/aprendizaje/assets/js/6.27888615.js"><link rel="prefetch" href="/aprendizaje/assets/js/7.06129e92.js"><link rel="prefetch" href="/aprendizaje/assets/js/8.799663d7.js"><link rel="prefetch" href="/aprendizaje/assets/js/9.7e901376.js">
+    <link rel="stylesheet" href="/aprendizaje/assets/css/0.styles.5e6ce45c.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/aprendizaje/" class="home-link router-link-active"><!----> <span class="site-name">Guias</span></a> <div class="links"><!----> <nav class="nav-links can-hide"><div class="nav-item"><a href="/aprendizaje/" class="nav-link">
+  Inicio
+</a></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/aprendizaje/" class="nav-link">
+  Inicio
+</a></div> <!----></nav>  <ul class="sidebar-links"><li><a href="/aprendizaje/Git/" aria-current="page" class="sidebar-link">Guia de GIT</a></li><li><a href="/aprendizaje/Git/comando.html" class="sidebar-link">CMD VS  POWERSHELL</a></li><li><a href="/aprendizaje/Git/github.html" class="sidebar-link">Subir el repositorio a GITHUB</a></li><li><a href="/aprendizaje/Git/commit.html" class="sidebar-link">Viajar entre commits</a></li><li><a href="/aprendizaje/Git/ramas.html" class="sidebar-link">Ramas</a></li><li><a href="/aprendizaje/Git/tag.html" aria-current="page" class="active sidebar-link">Tag</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="tag"><a href="#tag" class="header-anchor">#</a> Tag</h1> <p>Para hacer versiones</p> <p>Se puede hacer versiones en las ramas</p> <div class="language-git extra-class"><pre class="language-git"><code>git tag  nombre -m <span class="token string">&quot;mensaje&quot;</span> 
+</code></pre></div><p>Crea un tag
+Ejemplo:</p> <p>git tag versionAlpha -m &quot;versión alpha&quot;</p> <div class="language-git extra-class"><pre class="language-git"><code>git tag
+</code></pre></div><p>Para listar los tags</p> <div class="language-git extra-class"><pre class="language-git"><code>git tag -d nombreTags
+</code></pre></div><p>Para borrar un tag</p> <div class="language-git extra-class"><pre class="language-git"><code>git tag -a nombreTag f52f3da -m <span class="token string">&quot;version alpha&quot;</span>
+</code></pre></div><p>Hacer una versión en un commit anterior ej: f52f3da</p> <div class="language-git extra-class"><pre class="language-git"><code>git show nombreTag
+</code></pre></div><p>Mostrar información del tag</p> <div class="language-git extra-class"><pre class="language-git"><code>git push --tags
+</code></pre></div><p>Para Subir los tags a github.</p></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/aprendizaje/Git/ramas.html" class="prev">
+        Ramas
+      </a></span> <!----></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/aprendizaje/assets/js/app.88bf49cf.js" defer></script><script src="/aprendizaje/assets/js/2.c431ec36.js" defer></script><script src="/aprendizaje/assets/js/15.0dc76b53.js" defer></script>
+  </body>
+</html>
