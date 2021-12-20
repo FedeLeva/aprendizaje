@@ -70,11 +70,11 @@ Insertas una imagen
 
 
 ``` html
-<img :src”$withBase(‘/ruta’)”>
+<img :src="$withBase('/img/main-start.png')" >
 ```
-Podes usar esto tambien para insertar imagenes, por defecto esta en la carpeta public
+Podes usar esto tambien para insertar imagenes, por defecto esta en la carpeta public(QUE HAY QUE CREARLA)
 :::warning
-En vuepress/public/img van las imágenes.
+En .vuepress/public/img van las imágenes.
 
 :::
 

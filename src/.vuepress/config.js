@@ -53,6 +53,9 @@ module.exports = {
         'tag'
   
       ] ,
+      '/Css/' : [
+         'flexbox'
+      ] ,
      '/' : [
        ''
 
