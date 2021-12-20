@@ -32,6 +32,10 @@ module.exports = {
     ],
     sidebar: 
     {
+      '/LenguajeCss/' : [
+        '' ,
+        'flexbox'
+     ] ,
       '/Javascript/' : [
         '' ,
         'basico' , 
@@ -52,9 +56,6 @@ module.exports = {
         'ramas' , 
         'tag'
   
-      ] ,
-      '/LenguajeCss/' : [
-         'flexbox'
       ] ,
      '/' : [
        ''
