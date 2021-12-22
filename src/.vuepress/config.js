@@ -34,8 +34,8 @@ module.exports = {
     {
       '/LenguajeCss/' : [
         '' ,
-        'flexbox' ,
-        'grid'
+        'Grid' ,
+        'flexbox'
      ] ,
       '/Javascript/' : [
         '' ,
