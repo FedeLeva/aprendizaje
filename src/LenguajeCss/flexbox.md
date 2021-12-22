@@ -236,8 +236,8 @@ Agarra el espacio que sobra y lo reparte entre las cajas que están.
 
 
 ```css
-// El espacio sobrante se dividira en tres . 
-// Dos se van para la clase green y uno para la clase Orange
+/* El espacio sobrante se dividira en tres . 
+ Dos se van para la clase green y uno para la clase Orange */
 .orange {
 background:#F50;
 flex-grow:1;
@@ -279,11 +279,11 @@ Se empieza a repartir el espacio sobrante cuando todas las cajas alcancen el esp
 :::
 
 ```css
-// ceda el doble que el resto
+/* ceda el doble que el resto */
 flex-shrink: 2;
-//  Se puede hacer que ceda menos
+/*  Se puede hacer que ceda menos */
 flex-shrink: .5;
-// Que no ceda espacio
+/* Que no ceda espacio */
 flex-shrink: 0;
 ```
 
@@ -295,9 +295,9 @@ SE NECESITA AL MENOS EL VALOR DE FLEX-GROW PARA FUNCIONAR
 :::
 
 ```css
-// flex-grow:1 flex-shrink: 0 flex-besis: 350px
+/* flex-grow:1 flex-shrink: 0 flex-besis: 350px */
 flex: 1 0 350px
-// Tambien funciona:
+/* Tambien funciona */
 flex: 1;
 ```
 
@@ -325,20 +325,20 @@ Margin-top es margin-bottom, margin-left es margin-right , etc.
 
 
 ```css
-// centrar verticalmente
+/* centrar verticalmente*/
 margin-top: auto;
 margin-bottom: auto;
 ```
 
 ```css
-// centrar horizontalmente
+/* centrar horizontalmente */
 margin-right: auto;
 margin-left:auto;
 ```
 
 
 ```css
-// centrar horizontalmente y verticalmente
+/* centrar horizontalmente y verticalmente */
 margin-left: auto;
 margin-right: auto;
 margin-top: auto;
