@@ -44,6 +44,12 @@ console.log(document.domain);
 
 ```
 
+:::tip
+Se puede usar la propiedad classlist para manipular las clases (eliminar , añadir)
+
+ClassList manipula todas las clases (como un todo), classlist las separa antes de manipularla (podes manipular la clase activo sin necesidad de afectar la clase inactivo).
+:::
+
 ## getElementById()
 
 -  Devuelve una referencia al elemento por su ID.
@@ -793,6 +799,9 @@ lista.appendChild(fragment);
 - El parametro  representa un objeto del evento que se ejecuto  que contiene varios valores/funciones.
 - El objeto evento tiene propiedades como target (el elemento que activo el evento) , la propiedad dataset que la contiene el elemento que activo el elemento , etc
 
+:::tip
+Se puede pasar el objeto evento como parámetro hacia otras funciones/metodos externa
+:::
 
 ### propiedad target
  Es el elemento que activo el evento
@@ -986,5 +995,497 @@ const pintarCarrito = () => {
 };
 
 agregar.forEach((boton) => boton.addEventListener("click", agregarCarrito));
+
+```
+
+## El burbujeo y la captura
+
+El burbujeo y la captura de eventos son dos mecanismos que describen lo que sucede cuando dos controladores del mismo tipo de evento(eventos) se activan en un elemento. (Padre – Hijo) (Cuando dos eventos del mismo tipo se ejecutan en un elemento).
+
+```html
+<div class="container">
+    <div class="border border-primary border-5 py-5 m-3">
+        Lorem, ipsum dolor
+        <div class="border border-secondary border-5 py-5 m-3">
+            Lorem, ipsum dolor
+            <div class="border border-danger border-5 py-5 m-3">
+                Lorem, ipsum dolor
+            </div>
+        </div>
+    </div>
+</div>
+
+```
+### Por defecto se trabaja de la forma burbuja:
+Fase de burbuja (bubbling): Se propaga desde el elemento hijo hasta el padre. (comportamiento por defecto)
+
+```js
+
+const padre = document.querySelector(".border-primary");
+const hijo = document.querySelector(".border-secondary");
+const nieto = document.querySelector(".border-danger");
+
+padre.addEventListener("click", (e) => console.log("padre"));
+hijo.addEventListener("click", (e) => console.log("hijo"));
+nieto.addEventListener("click", (e) => console.log("nieto"));
+
+```
+
+### Fase de Captura 
+
+
+Fase de captura: Se propaga desde el elemento padre hasta el hijo. (Al reves que la burbuja)
+
+Para eso se utiliza un tercer parámetro en AddEventListener , que por defecto siempre es false (por eso no lo colocamos).
+
+Pero si le ponemos true, se invierte y se propaga desde el elemento padre hasta el hijo.
+
+```js
+const padre = document.querySelector(".border-primary");
+const hijo = document.querySelector(".border-secondary");
+const nieto = document.querySelector(".border-danger");
+
+padre.addEventListener("click", (e) => console.log("padre") , true);
+hijo.addEventListener("click", (e) => console.log("hijo") , true);
+nieto.addEventListener("click", (e) => console.log("nieto") , true);
+
+```
+## stopPropagation
+Sirve para evitar el burbujeo y la captura (Lo anterior)
+
+evita la propagación adicional del evento actual en las fases de captura y bubbling.
+
+con el método stopPropagation() le decimos que deje de hacer la fase de burbujeo o captura , por lo tanto cada elemento es forzado a ejecutar solamente un evento del mismo tipo.
+
+```js
+const cajas = document.querySelectorAll(".border");
+cajas.forEach((item) => {
+    item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        console.log("click");
+    });
+});
+
+```
+## preventDefault
+Cancela el  comportamiento por defecto del elemento si este es cancelable, sin detener el resto del funcionamiento del evento, es decir, se sigue ejecutando el  evento.
+
+Cancela el comportamiento por defecto del elemento, pero sigue ejecutando el evento.
+
+```html
+<form>
+    <input type="text" name="nombre">
+    <button type="submit">Enviar</button>
+</form>
+
+```
+
+```js
+const formulario = document.querySelector("form");
+formulario.addEventListener("submit", (e) => {
+    e.preventDefault();
+    console.log("click");
+});
+
+```
+
+```html
+
+<a href="#">ancla</a>
+
+```
+
+```js
+const ancla = document.querySelector("a");
+ancla.addEventListener("click", (e) => e.preventDefault());
+
+```
+## Delegación de Eventos
+
+La delegación de eventos es básicamente un patrón para manejar eventos de manera eficiente.
+
+En lugar de agregar un detector de eventos(EventListener) a todos y cada uno de los elementos similares, podemos agregar un detector de eventos(EventListener) a un elemento principal(el padre/contenedor principal) y ejecutar una acción/un procedimiento  según el elemento(objetivo particular) que activo el evento , utilizando la propiedad .target del objeto de evento.
+
+Así evitamos la propagación 👌
+
+:::tip
+La delegación de eventos sirve para añadir eventos a elementos que todavia no existen en el DOM.
+:::
+
+
+
+```html
+<div class="container">
+    <div
+      id="padre"
+      class="border border-primary border-5 py-5 m-3"
+      data-div="divPadre"
+    >
+        Lorem, ipsum.
+        <div
+          id="hijo"
+          class="border border-secondary border-5 py-5 m-3"
+          data-div="divHijo"
+        >
+            Lorem, ipsum.
+            <div
+              id="nieto"
+              class="border border-danger border-5 py-5 m-3"
+              data-div="divNieto"
+            >
+                Lorem, ipsum.
+            </div>
+        </div>
+    </div>
+</div>
+
+```
+
+```js
+
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+    console.log(e.target);
+});
+
+```
+
+A través de la propiedad target averiguamos que elemento ejecuto el evento y en base a eso ejecutamos un trozo de codigo determinado.
+
+Podemos averiguar a que elemento pertenece por la id.
+
+```js
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+    console.log(e.target.id);
+});
+
+
+
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+
+    if (e.target.id === "padre") {
+        console.log("diste click al padre");
+    }
+});
+
+```
+Podemos averiguar a que elemento pertenece por el método matches.
+## Metodo Matches
+El método matches() comprueba si el Elemento sería seleccionable por el selector CSS especificado en el parametro; en caso contrario, retorna false.
+
+Comprueba si el elemento existe a través de un selector CSS.
+
+```js
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+
+   console.log(e.target.matches(".border-secondary"));
+});
+
+```
+```js
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+
+   
+   if (e.target.matches(".border-secondary")) {
+       console.log("Diste click al hijo");
+   }
+});
+
+```
+Podemos averiguar a que elemento pertenece atraves del dataset.
+## data-nombre
+El atributo data-nombre es para hacer algo con JavaScript
+
+Podemos acceder al valor del atributo data a través del nombre.
+:::tip
+Un elemento puede tener varios dataset.
+:::
+
+:::tip
+Se puede añadir el atributo data por javascript a un elemento.
+
+elemento.dataset.nombre = valor;
+
+el nombre y el valor puede ser cualquiera ya que es el que se va a crear
+
+
+:::
+
+```js
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+
+   console.log(e.target.dataset);
+
+});
+
+```
+
+En el ejemplo de arriba , aparece un objeto con el nombre-valor del atributo data del elemento.
+
+Se puede acceder al valor con el punto (dataset.nombre) o corchetes (dataset[‘nombre’])
+
+```js
+   console.log(e.target.dataset.div);
+
+   console.log(e.target.dataset['div']);
+
+```
+
+```js
+const container = document.querySelector(".container");
+container.addEventListener("click", (e) => {
+
+   if (e.target.dataset.div == "divNieto") {
+       console.log("diste click en el nieto");
+   }
+
+});
+
+
+```
+
+:::tip
+Puedes seleccionar todo el document, así no tienes que estar detectando el componente principal 🤙
+
+document.addEventListener()
+:::
+
+## Práctica
+
+:::tip
+parseInt Para convertir un String a numero entero.
+:::
+
+:::tip
+return se puede usar para no devolver nada  (Sirve para eliminar elementos dentro de filter).
+
+return               no es lo mismo que    return item
+
+
+Si un if devuelve algo en solo una línea, no hace falta las llaves ({}).
+
+
+:::
+
+:::tip
+en el reduce, podes especificar qué tipo de valor va a devolver en el segundo parámetro.
+:::
+
+:::tip
+En los ciclos(bucle) solo se usa el fragment .
+:::
+
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito Objeto</title>
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" rel="stylesheet">
+</head>
+
+<body>
+
+    <main class="container mt-5">
+        <div class="row text-center">
+            <article class="col-sm-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Frutilla 🍓</h5>
+                        <p class="lead">$300</p>
+                        <button class="btn btn-primary btn-sm" data-fruta="frutilla" data-precio="300">Agregar</button>
+                    </div>
+                </div>
+            </article>
+            <article class="col-sm-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Banana 🍌</h5>
+                        <p class="lead">$100</p>
+                        <button class="btn btn-primary btn-sm" data-fruta="banana" data-precio="100">Agregar</button>
+                    </div>
+                </div>
+            </article>
+            <article class="col-sm-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Manzana 🍏</h5>
+                        <p class="lead">$200</p>
+                        <button class="btn btn-primary btn-sm" data-fruta="manzana" data-precio="200">Agregar</button>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <section class="container mt-3">
+        <ul class="list-group" id="carrito"></ul>
+    </section>
+
+    <footer id="footer" class="container mt-3">
+        <template id="templateFooter">
+            <div class="card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <p class="lead mb-0">TOTAL: $<span>1500</span></p>
+                    <button class="btn btn-outline-primary">Finalizar Compra</button>
+                </div>
+            </div>
+        </template>
+    </footer>
+
+    <template id="template">
+        <li class="list-group-item text-uppercase bg-secondary text-white">
+            <span class="badge bg-primary rounded-pill align-middle">14</span>
+            <span class="lead align-middle">A list item</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <p class="lead mb-0">Total: $<span>200</span></p>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-success">Agregar</button>
+                <button class="btn btn-sm btn-danger">Quitar</button>
+            </div>
+        </li>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
+
+```
+
+```js
+
+const carrito = document.querySelector("#carrito");
+const template = document.querySelector("#template");
+const footer = document.querySelector("#footer");
+const templateFooter = document.querySelector("#templateFooter");
+const fragment = document.createDocumentFragment();
+let carritoArray = [];
+
+// Delegación de eventos:
+document.addEventListener("click", (e) => {
+    // console.log(e);
+    // console.log(e.target.dataset.fruta);
+    // console.log(e.target.matches(".card button"));
+    if (e.target.matches(".card button")) {
+        agregarCarrito(e);
+    }
+
+    // console.log(e.target.matches(".list-group-item .btn-success"));
+    if (e.target.matches(".list-group-item .btn-success")) {
+        btnAumentar(e);
+    }
+
+    // console.log(e.target.matches(".list-group-item .btn-danger"));
+    if (e.target.matches(".list-group-item .btn-danger")) {
+        btnDisminuir(e);
+    }
+});
+
+const agregarCarrito = (e) => {
+    // console.log(e.target.dataset);
+    const producto = {
+        titulo: e.target.dataset.fruta,
+        id: e.target.dataset.fruta,
+        cantidad: 1,
+        precio: parseInt(e.target.dataset.precio),
+    };
+
+    // buscamos el indice
+    const index = carritoArray.findIndex((item) => item.id === producto.id);
+
+    // si no existe empujamos el nuevo elemento
+    if (index === -1) {
+        carritoArray.push(producto);
+    } else {
+        // en caso contrario aumentamos su cantidad
+        carritoArray[index].cantidad++;
+    }
+
+    // console.log(carritoArray);
+    pintarCarrito();
+};
+
+const pintarCarrito = () => {
+    carrito.textContent = "";
+
+    // recorremos el carrito y pintamos elementos:
+    carritoArray.forEach((item) => {
+        const clone = template.content.cloneNode(true);
+        clone.querySelector(".text-white .lead").textContent = item.titulo;
+        clone.querySelector(".rounded-pill").textContent = item.cantidad;
+        clone.querySelector("div .lead span").textContent =
+            item.precio * item.cantidad;
+        clone.querySelector(".btn-success").dataset.id = item.id;
+        clone.querySelector(".btn-danger").dataset.id = item.id;
+        fragment.appendChild(clone);
+    });
+    carrito.appendChild(fragment);
+
+    pintarFooter();
+};
+
+const pintarFooter = () => {
+    footer.textContent = "";
+
+    const total = carritoArray.reduce(
+        // El 0 es para especificar que se devuelve un numero y no un String
+        (acc, current) => acc + current.precio * current.cantidad,
+        0
+    );
+
+    // console.log(total);
+
+    const clone = templateFooter.content.cloneNode(true);
+    clone.querySelector("p span").textContent = total;
+
+    // fragment.appendChild(clone);
+    footer.appendChild(clone);
+};
+
+const btnAumentar = (e) => {
+    // console.log(e.target.dataset.id);
+    carritoArray = carritoArray.map((item) => {
+        if (item.id === e.target.dataset.id) {
+            item.cantidad++;
+        }
+        return item;
+    });
+    pintarCarrito();
+};
+
+const btnDisminuir = (e) => {
+    // console.log(e.target.dataset.id);
+    carritoArray = carritoArray.filter((item) => {
+        // console.log(item);
+        if (item.id === e.target.dataset.id) {
+            if (item.cantidad > 0) {
+                item.cantidad--;
+                // Si la cantidad es igual a 0 , no retorna nada y por lo tanto se elimina del array.
+                // Si es una sola linea no hace falta las llaves
+                if (item.cantidad === 0) return;
+                // Si es mayor a 0 , retorna el elemento.
+                return item;
+            }
+        } else {
+            return item;
+        }
+    });
+    pintarCarrito();
+};
+
 
 ```

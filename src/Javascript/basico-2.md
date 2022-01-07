@@ -426,6 +426,12 @@ Los parametros con valores por defecto se puede aplicar a los otros tipos de fun
 ## Arrow & forEach()
 
  El método forEach() ejecuta la función indicada una vez por cada elemento del array
+ :::tip
+ No solo recorre arrays 
+
+ forEach puede recorrer NodeList y muchos mas
+
+ :::
 
 El parámetro es una función flecha (la que se va a ejecutar por cada elemento)
 

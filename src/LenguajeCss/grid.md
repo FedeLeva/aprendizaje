@@ -353,14 +353,25 @@ grid-auto-flow: dense;
 ```
 
 ## Grid Dinamico
- Por defecto en Grid , el ancho de una celda va a ser igual a la primera palabra que va a contener.
+ Por defecto en Grid , el ancho de una celda va a ser igual al contenido que contenga el item.
 
-Si ve un espacio te tira las demás palabras abajo
+Si ve un espacio en blanco te tira las demás palabras abajo
 
 Es el contenido minimo.
 
+Para hacer dinamico  se utiliza los valores Min-content – Max Content – MinMax – Auto-fill – Auto-fit
+
+Todos los valores se ponen en la función repeat 
+
+
 ##  Min-content
+Va en la medida de la funcion REPEAT
+
 Es el contenido minimo (el tamaño mas chico)
+
+contenido minimo = el ancho va a ser igual al contenido que contenga el item.
+
+Después del espacio en blanco, se considera un contenido diferente y por lo tanto lo manda abajo.
 
 
 
@@ -369,6 +380,14 @@ grid-template-columns: repeat(3,min-content);
 ```
 
 ##  Max-content
+Va en la medida de la funcion REPEAT
+
+No considera el espacio en blanco (como min-content) .
+
+Te mete en una línea todo el contenido sin importar que tenga espacio.
+
+
+
 Es el máximo contenido (el tamaño mas grande)
 
 
@@ -377,10 +396,17 @@ grid-template-columns: repeat(3,max-content);
 ``` 
 
 ## mixmax()
+Va en la medida de la funcion REPEAT , es una funcion.
+
 Para especificar lo minimo y lo máximo que va a medir la columna/fila.
 ### Parametros
-1. Medida Minima
-2. Medida maxima
+1. Medida Minima que va a medir el elemento
+2. Medida maxima que va a medir el elemento
+
+Se puede poner los dos valores anteriores como parámetro.
+
+En la cantidad de columnas/filas
+
 
 ```css
 grid-template-columns: repeat(3,minmax(100px,300px));
@@ -395,7 +421,18 @@ grid-template-columns: repeat(3,minmax(100px,1fr));
 ``` 
 
 ## Auto-Fill
+
+Va en la cantidad de columnas/filas de la funcion REPEAT 
+
 Es para Generar la cantidad de columnas que pueda que cumpla con esas propiedades (min del minmax).
+
+Si el elemento no tiene espacio , lo lanza para abajo (es como el wrap de flexbox)
+
+Rellena toda la fila con toda la columna que pueda poner.
+
+Y si no entran en una fila, crea  las filas necesarias de forma implícita.
+
+
 
 Se puede aplicar a las filas
 ```css
@@ -403,6 +440,22 @@ grid-template-columns: repeat(auto-fill,minmax(100px,150px));
 ``` 
 
 ## Auto-fit
+Va en la cantidad de columnas/filas de la funcion REPEAT 
+
+Rellena todo el contenedor con los ítems.
+
+Sirve para evitar huecos.
+
+Lanza los elementos para abajo, si no entra en el contenedor.
+
+Rellena toda la fila con toda la columna que pueda poner.
+
+Y si no entran en una fila, crea  las filas necesarias de forma implícita.
+
+Rellena todo el contenedor con las columnas disponibles.
+
+
+
 Cuando no tiene mas elementos(item)(estan todos en la grilla) los escala(fr)
 ```css
 grid-template-columns: repeat(auto-fit,minmax(100px,1fr));

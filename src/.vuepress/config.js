@@ -32,6 +32,17 @@ module.exports = {
     ],
     sidebar: 
     {
+      '/LenguajeSQL/': [
+        '' ,
+        'select' ,
+        'where' ,
+        'filtro' , 
+        'join' , 
+        'expresiones' ,
+         'modificar' , 
+         'subconsulta'
+        
+      ] ,
       '/LenguajeCss/' : [
         '' ,
         'Grid' ,
@@ -43,7 +54,10 @@ module.exports = {
         'basico-2',
         'objeto' ,
         'DOM' , 
-        'array'
+        'array' , 
+        'formulario' , 
+        'promesas' , 
+        'ajax'
       ] , 
       '/GuiaVuepress/' : [
         ''
