@@ -57,7 +57,9 @@ module.exports = {
         'array' , 
         'formulario' , 
         'promesas' , 
-        'ajax'
+        'ajax' , 
+        'poo' ,
+        'modulos'
       ] , 
       '/GuiaVuepress/' : [
         ''

@@ -253,6 +253,10 @@ console.log(numerosPorDos);
 
 
 ```
+:::tip 
+Se puede modificar el mismo array con MAP() si no le asignas a una variable.
+:::
+
 
 ## filter()
 

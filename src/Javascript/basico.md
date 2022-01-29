@@ -548,7 +548,7 @@ function getRandomInt(min, max) {
 
 ```
 
-### Operador ternario
+## Operador ternario
 ```js
 let mensaje = (condición) ?  true: false;
 ```

@@ -1112,6 +1112,9 @@ Así evitamos la propagación 👌
 La delegación de eventos sirve para añadir eventos a elementos que todavia no existen en el DOM.
 :::
 
+:::tip 
+Con la delegación de eventos podemos acceder a eventos que no todavia no existen en el DOM.
+:::
 
 
 ```html
