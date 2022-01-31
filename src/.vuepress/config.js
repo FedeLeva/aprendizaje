@@ -32,6 +32,13 @@ module.exports = {
     ],
     sidebar: 
     {
+       '/Java/' : [
+            '' ,
+            'BD' , 
+            'interfaz',
+            'excepciones'
+            
+       ] , 
       '/LenguajeSQL/': [
         '' ,
         'select' ,
