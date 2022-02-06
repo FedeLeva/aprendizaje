@@ -648,3 +648,20 @@ public class Oficina {
 :::tip 
 Tambien podes exportar el proyecto  como Javadoc
 :::
+
+## Exportar/Importar proyecto
+
+### Exportar
+1. Seleccionar el proyecto y click Derecho -- Exportar
+2. General - Archive File 
+3. Seleccionar los proyectos a exportar y carpetas
+4. Que se exporte con formato zip (Save in zip format) y con una estructura de arbol de directorios (Create directory structure for files)
+5. Seleccionar la carpeta donde se va a exportar(destino)
+6. Le das a finish
+
+### Importarlo
+1. File -- Import 
+2. General - Existing Projects into WorkSpace - next
+3. Selecionas que importar , el directorio root (la carpeta en donde esta ubicado el zip) o selecionar un archivo(para seleccionar el zip)(recomendado)
+4. En Projects: seleccionas los proyectos a importar.
+5. Le das a finish.
