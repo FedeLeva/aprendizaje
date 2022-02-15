@@ -452,3 +452,516 @@ npm install --save-dev nodemon
 :::tip
  [nodemon](https://www.npmjs.com/package/nodemon) es una herramienta que ayuda a desarrollar aplicaciones basadas en node.js al reiniciar automáticamente la aplicación de nodo cuando se detectan cambios de archivo en el directorio.
 :::
+
+## Servidor HTTP
+- [Link](https://nodejs.dev/learn/build-an-http-server)
+-	Hypertext Transfer Protocol: El Protocolo de transferencia de hipertexto es el protocolo de comunicación que permite las transferencias de información en la World Wide Web.
+-	Intercambia  información entre cliente y servidor.
+-	El servidor queda a la espera de alguna solicitud HTTP ejecutada por el cliente y proporciona una respuesta.
+-	Cuando visitamos un sitio web, hacemos una solicitud GET de HTTP, y el servidor nos devuelve por ejemplo un index.html con el sitio web.
+-	Nosotros configuraremos estas respuestas en nuestro "servidor web o servidor http" con node.js
+
+:::tip Iniciar proyecto
+- Al iniciar el proyecto, hay que crear nuestro package.json y configurarlo.
+```powershell
+
+npm init -y  
+```
+- la -y es para que sea todo automatico.
+- No hace falta poner la extensión.js
+```js
+{
+  "name": "practica",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index",
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+
+```
+- instalamos nodemon:
+```powershell
+npm i nodemon
+```
+:::
+- Vamos a usar el módulo http que viene integrado con Node.
+:::tip Modulo
+Modulo =  Un trozo de código que alguien creo y nosotros lo usamos
+:::
+index.js:
+```js
+// Importamos el modulo http que viene con Node
+const http = require("http");
+
+// puerto
+// 3000 = ocupa react  8080 = ocupa vue
+const port = 5000;
+
+// Creamos un servidor
+// createServer tiene como parametro un callback(requerimiento(req) , respuesta(res))
+const server = http.createServer((req, res) => {
+
+    // Por cualquier peticion(requirimiento)
+    res.end("esta es la respuesta");
+});
+
+//El servidor escucha en el puerto especificado
+//listen(puerto , funcion)
+server.listen(port, () => {
+    console.log("servidor andando 🚀");
+});
+
+```
+```powershell
+npm run dev
+```
+Al ejecutarlo:
+
+- En el navegador: localhost:puerto
+- http://localhost:5000/ en el ejemplo
+
+Otro Ejemplo:
+
+
+```js
+// Modulo que viene con Node
+const http = require('http');
+// Creamos un servidor 
+// Parametros createServer(callback(requirimiento(req),respuesta(res))
+const server = http.createServer((req , res) => {
+
+      // Respuesta del servidor
+      res.end('estoy respondiendo a tu solicitud');
+})
+
+const puerto = 3000;
+// El servidor escucha en un puerto
+// Parametros listen(puerto , callback)
+server.listen(puerto , () => {
+      console.log('escuchando solicitudes');
+})
+
+```
+
+## Verbos o métodos HTTP
+- [Info](https://developer.mozilla.org/es/docs/Web/HTTP/Methods)
+-	HTTP define un conjunto de métodos de petición para indicar la acción que se desea realizar para un recurso determinado.
+-	Los más populares son: GET, POST, PUT, DELETE.
+-	En el siguiente apartado crearemos nuestro servidor web (con express) y pondremos en práctica cada uno de estos métodos.
+-	Si entramos a una URL y nos devuelve una página web es con el método GET.
+- Get = Servicios que exponemos
+- Post = Crear algo
+
+## Express
+- [Info](https://expressjs.com/es/)
+-  Nos permite hacer nuestro servidor HTTP de una manera sencilla.
+- Nos permite gestionar las solicitudes que nos hacen los - clientes.
+Podemos conectarnos a BD y pintar información en un HTML.
+
+-	Infraestructura web rápida, minimalista y flexible para Node.js
+-	Con miles de métodos programado para HTTP y un middleware a su disposición, la creación de una API sólida es rápida y sencilla.
+-	Express proporciona una delgada capa de características de aplicación web básicas, que no ocultan las características de Node.js que tanto ama y conoce.
+
+### Instalacion:
+```powershell
+npm i express
+```
+Ejecutamos nodemon:
+```powershell
+npm run dev
+```
+index.js:
+```js
+// Importamos el modulo express que viene con Node
+const express = require("express");
+// Lo inicializamos
+const app = express()
+// puerto
+const port = 5000;
+ 
+
+//Una peticion get a la raiz del sitio web
+// req = requirimiento(peticion)   res = respuesta
+app.get('/', (req, res) => {
+      res.send('visitaste la pagina de inicio(raiz)')
+})
+
+// //El servidor escucha en el puerto especificado
+app.listen(port , () => console.log('Funciona'))
+
+```
+
+## Rutas
+- [Info](https://expressjs.com/es/starter/basic-routing.html)
+- 	El direccionamiento hace referencia a cómo responde una aplicación a una solicitud de cliente en un determinado punto final, que es un URI (o una vía de acceso) y un método de solicitud HTTP específico (GET, POST, etc.).
+
+index.js:
+```js
+// Importamos el modulo express que viene con Node
+const express = require("express");
+// Lo inicializamos
+const app = express()
+// puerto
+const port = 5000;
+ 
+
+//Una peticion get a la raiz del sitio web
+// req = requirimiento(peticion)   res = respuesta
+app.get('/', (req, res) => {
+      res.send('visitaste la pagina de inicio(raiz) http://localhost:5000/')
+})
+ // Otra ruta /contacto
+  // Para que responda , se debe enviar una peticion get a la url
+app.get('/contacto', (req, res) => {
+      res.send('visitaste la pagina de contacto http://localhost:5000/contacto')
+})
+ // Otra ruta /contacto
+// Para que responda , se debe enviar una peticion post a la url
+app.post('/contacto', (req, res) => {
+      res.send('visitaste la pagina de contacto http://localhost:5000/contacto a traves del post')
+})
+
+// //El servidor escucha en el puerto especificado
+app.listen(port , () => console.log('Funciona'))
+
+```
+:::tip Postman
+-	[postman](https://www.postman.com/)
+-	Permite hacer solicitudes HTTP
+-	Podemos simular todas las peticiones (POST , PUT , DELETE , ETC)
+:::
+:::tip GET
+- El navegador solo acepta peticiones GET.
+- GET = Obtener información de una URL
+:::
+## Archivos estáticos
+- [Info](https://expressjs.com/es/starter/static-files.html)
+-	Para el servicio de archivos estáticos como, por ejemplo, imágenes, archivos CSS y archivos JavaScript, utilice la función express.static  que la brinda el middleware de Express.
+-	Pase el nombre del directorio que contiene los activos estáticos a la función express.static para empezar directamente el servicio de los archivos.
+
+:::tip Middleware 
+- En palabras simples es una acción que se ejecuta antes de nuestra función de ruta(el servidor responda a la peticion)
+- El middleware  intercepta/atrapa la peticion antes que llegue al servidor.
+- Cuando el cliente envía una petición, el middleware detiene la petición, lo analiza y luego le envía algo.
+- Express viene con su middleware
+-	La palabra use representa el middleware
+:::
+- express.static es para ver donde van los archivos “públicos”.
+ - Los middleware se ejecutan antes de hacer la petición (que responda el servidor).
+
+ index.js:
+```js
+// Importamos el modulo express que viene con Node
+const express = require("express");
+// Lo inicializamos
+const app = express()
+// puerto
+const port = 5000;
+ 
+// middleware 
+app.use(express.static("public"))
+
+//Una peticion get a la raiz del sitio web
+// req = requirimiento(peticion)   res = respuesta
+app.get('/', (req, res) => {
+      res.send('visitaste la pagina de inicio(raiz) http://localhost:5000/')
+})
+ // Otra ruta
+app.get('/contacto', (req, res) => {
+      res.send('visitaste la pagina de contacto http://localhost:5000/contacto')
+})
+ // Otra ruta
+// Para que responda , se debe enviar una peticion post a la url
+app.post('/contacto', (req, res) => {
+      res.send('visitaste la pagina de contacto http://localhost:5000/contacto a traves del post')
+})
+
+// //El servidor escucha en el puerto especificado
+app.listen(port , () => console.log('Funciona'))
+
+```
+Creamos la carpeta public en la raiz del proyecto:
+
+En dicha carpeta, creamos un index.html 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Express</title>
+</head>
+<body>
+     <h1>Mi página con express</h1>
+</body>
+</html>
+
+```
+## req.query
+-	GET: Agrega datos de formulario a la URL en pares de nombre=valor, La longitud de una URL es limitada (alrededor de 3000 caracteres), GET es mejor para datos no seguros, como cadenas de consulta en Google.
+- [Query](https://stackabuse.com/get-query-strings-and-parameters-in-express-js/)
+-	En términos simples, una cadena de consulta (Query) es la parte de una URL después del signo de interrogación (?).
+-	Está destinado a enviar pequeñas cantidades de información al servidor a través de la URL.
+-	Esta información generalmente se usa como parámetros para consultar una base de datos, o tal vez para filtrar resultados. Realmente depende de ti para qué se usan.
+-	No manipular datos delicados con un GET.
+
+index.html de la carpeta public
+```html
+  <form action="/formulario" method="get">
+          <input type="text" name="nombre" id="">
+          <input type="text" name="apellido" id="">
+          <button type="submit">Enviar</button>
+      </form>
+
+```
+index.js: 
+```js
+app.get('/formulario' , (req,res)=> {
+      //Devuelve un objeto que contiene las etiqueta nombre - value de los input
+      console.log(req.query);
+
+      res.send('formulario enviado  ' + req.query.nombre);
+})
+
+```
+## req.body
+index.html:
+```html
+<form action="/formulario" method="POST">
+          <input type="text" name="nombre" id="">
+          <input type="text" name="apellido" id="">
+          <button type="submit">Enviar</button>
+      </form>
+
+```
+- Con el método POST , los datos no viajan por la URL , viaja por el cuerpo de la petición HTTP
+-	POST: Agrega datos de formulario dentro del cuerpo de la solicitud HTTP (los datos no se muestran en la URL)
+- [Error req.body vacio](https://stackoverflow.com/questions/66555172/why-is-req-body-undefined-in-express)
+
+index.js
+```js
+app.post('/formulario' , (req,res)=> {
+     
+      console.log(req.body);
+
+      res.send('formulario enviado  ' );
+})
+
+```
+-	Desde el formulario HTML se está enviando datos a través del cuerpo o body, pero por defecto express no lee este tipo de datos.
+-	Por lo tanto para indicarle a express que lea y analice los req.body (datos a través del cuerpo POST o PUT), se necesita configurar un middleware apropiado para dicho trabajo.
+-	El middleware leerá el cuerpo de la solicitud, lo analizará y colocará los resultados analizados en el  req.body para que esté allí cuando se llame a su controlador de solicitudes.
+-	Express tiene un middleware como este incorporado para varios tipos de contenido.
+- [info](https://expressjs.com/en/4x/api.html#express.json)
+
+:::tip Algunos de los middlewares 
+Algunos de los middlewares para analizar los diferentes tipos de contenido:
+```js
+express.json(...)    // "application/json"
+express.raw(...)     // reads the body into a Buffer for you to parse yourself
+express.text(...)    // "text/plain" - reads the body into a string
+express.urlencoded(...) // "application/x-www-form-urlencoded"
+```
+:::
+index.js:
+```js
+// Este se utiliza para analizar un formulario simple como el anterior
+app.use(express.urlencoded({extended : true}));
+
+app.post('/formulario' , (req,res)=> {
+        //Devuelve un objeto que contiene las etiqueta nombre - value de los input
+      console.log(req.body);
+
+      res.send('formulario enviado  ' );
+})
+
+```
+## fs
+- [Tutorial](https://ourcodeworld.co/articulos/leer/297/como-crear-un-archivo-usando-el-modulo-del-sistema-de-archivos-fs-en-nodejs)
+- [Opciones](https://nodejs.org/api/fs.html#filehandlewritefiledata-options)
+- Es un módulo incorporado
+
+index.html de la carpeta public:
+```html
+<form action="/formulario" method="POST">
+          <input type="text" name="nombre" id="">
+          <input type="text" name="apellido" id="">
+          <button type="submit">Enviar</button>
+      </form>
+
+```
+:::tip
+El return en las validaciones es para evitar dos res.send() que puede generar errores
+```js
+const fs = require('fs');
+const express = require("express");
+const app = express()
+const port = 5000;
+ 
+// middleware 
+app.use(express.static("public"))
+// Este se utiliza para manipular un formulario simple
+app.use(express.urlencoded({extended : true}));
+
+app.post('/formulario' , (req,res)=> {
+        
+      
+     const {nombre,apellido} = req.body;
+     // Validaciones
+     // Si no existe los datos
+     if (!nombre || !apellido) return res.send('no existen los datos');
+      res.send('formulario enviado  ' );
+})
+
+```
+
+:::
+:::tip
+También se puede direccionar (como se hace en el ejemplo)
+:::
+
+
+error.html dentro de public:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Error faltan los datos</h1>
+    <a href="/">Volver</a>
+</body>
+</html>
+
+```
+index.js: 
+```js
+
+app.post('/formulario' , (req,res)=> {
+        
+      
+     const {nombre,apellido} = req.body;
+     // Validaciones
+     // Si no existe los datos direcciono
+     if (!nombre || !apellido) return res.redirect("error.html")
+      res.send('formulario enviado  ' );
+})
+
+
+const fs = require('fs');
+const express = require("express");
+const app = express()
+const port = 5000;
+ 
+// middleware 
+app.use(express.static("public"))
+// Este se utiliza para manipular un formulario simple
+app.use(express.urlencoded({extended : true}));
+
+app.post('/formulario' , (req,res)=> {
+        
+      
+     const {nombre,apellido} = req.body;
+     // Validaciones
+     // Si no existe los datos
+     if (!nombre || !apellido) return res.redirect("error.html")
+     //Crear un Archivo
+      // writeFile(nombre-archivo y ubicacion , contenido , callback )
+      // writeFile no crea carpetas
+      //el archivo se crea en la carpeta archivos
+     fs.writeFile(`archivos/${nombre}.txt` , apellido , (err) => {
+           if (err) return   res.send('Fallo al crear el archivo  ' );
+           res.send("se creo el archivo");
+     })
+     
+})
+
+```
+## res.download
+- [info](http://expressjs.com/en/api.html#res.download)
+- Es para descargar algo.
+
+index.js
+```js
+const fs = require('fs');
+const express = require("express");
+const app = express()
+const port = 5000;
+ 
+// middleware 
+app.use(express.static("public"))
+// Este se utiliza para manipular un formulario simple
+app.use(express.urlencoded({extended : true}));
+
+app.post('/formulario' , (req,res)=> {
+        
+      
+     const {nombre,apellido} = req.body;
+     // Validaciones
+     // Si no existe los datos
+     if (!nombre || !apellido) return res.redirect("error.html")
+     //Crear un Archivo
+      // writeFile(nombre-archivo y ubicacion , contenido , callback )
+      // writeFile no crea carpetas
+      //el archivo se crea en la carpeta archivos
+     fs.writeFile(`archivos/${nombre}.txt` , apellido , (err) => {
+           if (err) return   res.send('Fallo al crear el archivo  ' );
+           // __dirname es la ubicacion de este archivo
+           //download(ubicacion del archivo a descargar)
+           res.download(__dirname + `/archivos/${nombre}.txt`);
+     })
+     
+})
+
+
+
+
+
+ 
+app.listen(port , () => console.log('Funciona'))
+
+```
+## res.sendFile
+- Abre un archivo en especifico.
+```js
+// Si no encuentra una ruta configurada (No existe la ruta)
+app.use((req, res, next) => {
+  // res.status(404).send("Sorry cant find that!");
+  res.status(404).sendFile(__dirname + "/public/404.html");
+});
+
+```
+## Propiedades y Metodos
+### propiedad __dirname
+- __dirname es la ruta( dinámica) en donde se ejecuta el código . 
+- Es la ubicación del archivo en la máquina.
+### metodo path.join
+He visto varios ejemplos con path.join, este nos sirve hacer uniones de rutas 
+```js
+app.use(express.static(path.join(__dirname, "public")));
+```
+
+
+## [Generador de aplicaciones con express](https://expressjs.com/es/starter/generator.html)
+ - express –view=nombremotorplantilla nombreapp
+ - Hay muchos motores de plantilla (pug ,ejs,etc).
+
+
+## Puerto 
+
+```js
+// Busque la variable PORT en nuestro servidor (variable de entorno) y si no existe, que utilice el puerto 3000
+const PORT = process.env.PORT || 3000;
+
+```

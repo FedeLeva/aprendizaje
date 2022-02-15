@@ -18,6 +18,10 @@
 ## Convenciones
 ### Clases e interfaces en Java
 Los nombres de las clases deben ser sustantivos, en mayúsculas y minúsculas, con la primera letra de cada palabra interna en mayúscula y en singular.
+- La primer letra del nombre de la clase va con mayúscula.
+- Una clase debe llevar un nombre representativo de la entidad.
+- Las clases deben nombrarse en singular y preferentemente con un sola palabra.
+
 ```java
 Interface  Bicycle
 Class MountainBike implements Bicyle
@@ -25,7 +29,9 @@ Class MountainBike implements Bicyle
 Interface Sport
 Class Football implements Sport
 ```
-
+### Atributos
+- Un atributo de clase debe llevar un nombre representativo.
+- Preferentemente un atributo de clase debe inicializarse.
 ### Métodos en Java
 Los métodos deben ser verbos, en mayúsculas y minúsculas, con la primera letra de cada palabra interna (a partir de la segunda) en mayúscula.
 ```java
@@ -34,8 +40,9 @@ void speedUp(int increment);
 void applyBrakes(int decrement);
 ```
 ### Variables
-Los nombres de las variables deben ser cortos pero significativos.
-
+- Los nombres de las variables deben ser cortos pero significativos.
+- Una variable debe llevar un nombre representativo.
+- Las variables comienzan en minúscula y nomenclatura camelcase.
 - No debería comenzar con un guión bajo (‘_’) o caracteres especiales, como por ejemplo, un signo de dólar ‘$’.
 - indicar al observador casual la intención de su uso.
 - Se deben evitar los nombres de variable de un carácter, excepto para variables temporales.
@@ -155,6 +162,10 @@ Un auto(clase) tiene varias puerta(clase)
 		System.out.println("Cadena de texto");
 		System.out.println(cadena + "\n" + tipoChar);
   ```
+  ### String
+  <img :src="$withBase('/img/omg.png')" >
+
+  
   ### Array 
   Crear Array con datos:
   ```java
@@ -538,15 +549,29 @@ public abstract class Dispositivo {
 ```
 
 ## Notas
+
+- Se deben generar y emplear los constructores de instancia.
+- Se deben generar y usar los métodos getter y setter antes que el uso directo de los atributos de clase.
+- De corresponder, se debe representar correctamente la relación de composición o asociación con la definición del atributo y la instanciación correspondiente en el momento correspondiente.
+- En las clases NO se deben setear DATOS de instancia, excepto valores iniciales por defecto ( Ejemplo: una habitación inicialmente esta DISPONIBLE, una mascota inicialmente NO esta afiliada, una película inicialmente NO esta alquilada, etc).
+- En la clase PRINCIPAL solo se deben instanciar objetos con sus datos (NO lógica ni pedido de datos).
+- Los métodos deben ser genéricos permitiendo hacer uso de su funcionalidad, NO hardcodeados.
 - Usar ID
 - Al cargar  una BD, devolver la instancia de un arraylist 
+- Arrancar el get con 2  a menos que empieze con la id BD
+- al instanciar desde una BD , el constructor debe contener la id.
 - ArrayList add / remove / get
 - 3 Constructores -- BD
+- En una ASOCIACIÓN voy a tener en la base un dato OPCIONAL (puede ser NULL)
+- En una COMPOSICIÓN voy a tener en la base un datos OBLIGATORIO (NOT NULL)
+- Herencia: se puede representar en una única tabla, en dos tablas o en 3 tablas... cuál estrategia conviene? por qué?
 - ArrayList tiene getter pero no setter.
 - Que el indice de la fila de la JTable y del arraylist coincida
 - La clase contenedor(padre) tiene atributos que representa las clases  contenido(hijo)
 - Buscar el elemento en la misma clase donde esta instanciado el ArrayList. Ej. Si En Oficina(Clase) hay un arrayList con un listado de objetos , al buscar un objeto en especifico se busca en la Oficina.
-
+- Recorrer un enum con el metodo values() que lo convierte en un Array y ordinal() para la posicion.
+- Solo se puede invocar metodos en bloques de codigo {} pero no al inicio de la Clase (bloques de codigo{} perteneciente a metodos , constructores , etc)
+- El inicio de la clase es solo para inicializar variables/atributos
 ## Operaciones
 ### Asignacion
 ![Asignacion](https://www.arkaitzgarro.com/java/images/cap04/operador.png)

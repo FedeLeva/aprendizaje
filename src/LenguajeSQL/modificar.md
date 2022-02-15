@@ -245,3 +245,11 @@ DROP TABLE Movies;
 ```sql
 DROP TABLE BoxOffice;
 ```
+
+## Añadir llave foranea
+```sql
+ALTER TABLE `nombre_tabla` ADD CONSTRAINT `nombre_llave_foranea` FOREIGN KEY (`atributo`) REFERENCES `tabla referenciada`(`atributo referenciado`) ON DELETE CASCADE ON UPDATE CASCADE;
+```
+```sql
+ALTER TABLE `veterinaria` ADD CONSTRAINT `fk_veterinaria_localidad` FOREIGN KEY (`id_localidad`) REFERENCES `localidad`(`id_localidad`) ON DELETE CASCADE ON UPDATE CASCADE;
+```

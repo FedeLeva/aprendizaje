@@ -109,3 +109,88 @@
  :::
 
  
+
+## MetaData
+- Existen clases en el paquete java.sql que permiten acceder a la información sobre 
+el diseño y la estructura de la base de datos como un todo o de un ResultSet 
+obtenido a partir de una consulta concreta. 
+- A este tipo de información se le llama 
+metadata y las clases que nos permitirán obtenerlo son DatabaseMetaData y 
+ResultSetMetaData.
+
+### Base de datos
+- Cuando se necesita conocer sobre las capacidades de una BD, se puede preguntar al objeto Connection a traves de su metadata.
+- Existen muchas preguntas que se pueden hacer, entre ellas tenemos el tipo base de datos, la 
+cantidad máxima de conexiones que permite la base de datos, etc.
+- El fragmento de 
+código que se encuentra a continuación, muestra cómo obtener esta información.
+
+```java
+public void bd() throws SQLException{ 
+DatabaseMetaData dbMet = con.getMetaData(); 
+if (dbMet==null) 
+System.out.println("No hay información de MetaData"); 
+else { 
+System.out.println("Tipo de la BD: " + dbMet.getDatabaseProductName()); 
+System.out.println("Versión : " + dbMet.getDatabaseProductVersion()); 
+System.out.println("Cantidad máxima de conexiones activas: " + 
+dbMet.getMaxConnections()); 
+}
+}
+```
+### ResultSet
+- Se puede obtener información de la estructura de un conjunto de registros 
+resultantes de una consulta.
+- Esto puede ser muy útil para acceder a tablas de una 
+base de datos de las cuales no se tenga información sobre su estructura. 
+- Utilizando la clase ResultSetMetaData podremos determinar la cantidad de columnas o  campos que contiene un ResultSet, el tipo y nombre de cada campo, si el campo es 
+solo lectura, etc. 
+- La función siguiente muestra la estructura de una tabla que le pasemos como argumento.
+```java
+public void estructuraTabla(String strTbl) {
+try {
+Statement st = con.createStatement();
+ResultSet rs = st.executeQuery("Select * from " + strTbl);
+//Obtiene el metadata del ResultSet
+ResultSetMetaData rsmeta = rs.getMetaData();
+//Obtiene la cantidad de columnas del ResultSet
+int col = rsmeta.getColumnCount();
+for (int i = 1; i <= col; i++) {
+System.out.println("Campo " +
+//Devuelve el nombre del campo i
+rsmeta.getColumnLabel(i) + "\t"
+//Devuelve el tipo del campo i
++ "Tipo: " + rsmeta.getColumnTypeName(i));
+}
+}
+catch (Exception e) {
+System.out.println("Error en Metadata ");
+}
+}
+```
+:::tip
+También es posible mediante la utilización de la información del 
+ResultSetMetaData mostrar la información de cualquier tabla sin tener la 
+estructura previamente.
+:::
+```java
+public void verCualquierTabla(String strTbl) {
+try {
+Statement st = con.createStatement();
+ResultSet rs = st.executeQuery("Select * from " + strTbl);
+ResultSetMetaData meta = rs.getMetaData();
+int col = meta.getColumnCount();
+//Mientras haya registros
+while (rs.next()) {
+for (int i = 1; i <= col; i++) {
+//Mostrar el dato del campo i
+System.out.print(rs.getString(i)
++ "\t");
+}
+System.out.println("");
+}
+}catch (Exception e) {
+System.out.println("Cualquier " + e.toString());
+}
+}
+```

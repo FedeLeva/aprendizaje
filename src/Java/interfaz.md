@@ -20,6 +20,7 @@ CargarImpresora ventana = new CargarImpresora();
 :::
 
 ## JTable
+- El Jtable solo muestra encabezado con un elemento superior(contenedor) como un scroll pane.
 - [Leyendo datos de un JTable ](https://medium.com/el-acordeon-del-programador/leyendo-datos-de-una-jtabla-en-java-swing-bc04263efd76)
 - [Como hacer para que tu tabla no sea editable en Java por código y gráficamente](https://www.youtube.com/watch?v=sJ-4O5uOhnc)
  ### Definir nombre de columnas
@@ -151,6 +152,11 @@ TextField.getText();
    ```
 Devuelve un String sin espacio en blanco
 
+
+Devuelve el indice selecionado (empieza en 0)
+```java
+comboSexo.getSelectedIndex()
+```
 ### RadioButton Y CheckBox
   :::tip
    Los radio button deben ir dentro de un grupo de botones para que solo se seleccione uno
