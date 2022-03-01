@@ -32,7 +32,7 @@ module.exports = {
     ],
     sidebar: 
     {
-      '/Node/': ['' , 'motor' , 'router' , 'mongo' ] ,
+      '/Node/': ['' , 'motor' , 'router' , 'mongo' , 'token' ] ,
        '/Java/' : [
             '' ,
             'BD' , 

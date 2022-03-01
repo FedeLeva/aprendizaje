@@ -187,3 +187,652 @@ router.get('/', async (req, res) => {
 module.exports = router;
 
 ```
+
+## Varibles de entorno
+- Son para ocultar información sensible.
+- Se configuran en el servidor.
+- [Utilizamos este modulo](https://www.npmjs.com/package/dotenv ) 
+
+```powershell
+npm install dotenv
+```
+
+### Configuracion
+1. Importalo
+```js
+require('dotenv').config()
+```
+2. Crear archivo .env 
+- Si se desea cambiar el  nombre del archivo, se deberá configurar el path (ver documentacion)
+- En este archivo van las variables de entorno
+- Le podés asignar un valor (PORT = 3001) o dejar que el hosting le asigne un valor (USUARIO = xxx)
+```env
+PORT=3001
+USUARIO=xxx
+PASSWORD=xxx
+DBNAME=xxx
+
+```
+
+
+
+
+:::warning
+Las variables de entorno se generan y configuran en el hosting
+:::
+
+3. Para acceder a una variable de entorno:
+```js
+process.env.NOMBREVARIABLE
+```
+Ejemplo: En un entorno local
+```js
+// index.js
+const express = require("express");
+var path = require('path');
+const app = express();
+
+require('dotenv').config()
+const port = process.env.PORT || 3000
+
+```
+
+```env
+PORT=3001
+```
+
+Otro Ejemplo: 
+```env
+PORT=3001
+USER=usuarioVeterinaria
+PASSWORD=Thw7Mk9CpQXoEjvY
+BD=veterinaria
+```
+
+```js
+
+//index.js
+// Conexion a BD
+const mongoose = require('mongoose');
+const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@mascota.xcibc.mongodb.net/${process.env.BD}?retryWrites=true&w=majority`;
+mongoose.connect(uri)
+
+```
+
+:::warning
+- Todos esos Ejemplos tienen las variables de entorno en un entorno local (están ubicada en nuestra PC).
+- el archivo .env se debe ignorar junto con el node_modules en git.
+:::
+Ejemplo en un entorno de producción (subido a un hosting):
+ 1. Se crean las variables (como si fuera un .env) en el hosting (Configurar el hosting)
+2. el index.js sigue igual , no se modifica
+
+```js
+//index.js
+// Conexion a BD
+const mongoose = require('mongoose');
+const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@mascota.xcibc.mongodb.net/${process.env.BD}?retryWrites=true&w=majority`;
+mongoose.connect(uri)
+
+```
+3. Se sube el proyecto al hosting ignorando el archivo.env 
+
+## bodyParser
+- Lo Tenemos que instalar para utilizar x-www-form-urlencoded
+- Sirve para leer el formulario (Leer el cuerpo del body)
+- [modulo](https://www.npmjs.com/package/body-parser)
+
+1. Lo instalamos:
+```powershell
+npm i body-parser
+```
+2. Lo configuramos 
+
+```js
+// index.js
+const express = require("express");
+// Importamos bodyParser
+const  bodyParser = require('body-parser')
+var path = require('path');
+const app = express();
+// Lo configuramos
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+// parse application/json
+app.use(bodyParser.json())
+require('dotenv').config()
+const port = process.env.PORT || 3000
+
+```
+
+## Crear
+
+1. Creamos el archivo crear.ejs en la carpeta de vistas
+
+:::tip
+- Los name de los inputs deben coincidir con el nombre de las propiedades del documento(objeto) a crear(MONGODB)
+- Para ver si coincidi eso , busca en el esquema
+```js
+const mascotaSchema = new Schema({
+
+    // nombre de propiedad : tipo de valor ,  nombre de propiedad : tipo de valor
+    // Como la ID se genera sola, no se especifica
+    nombre: String ,
+    descripcion: String
+})
+
+```
+Como se puede ver en el esquema hay dos propiedades , nombre y descripción.
+:::
+
+```js
+<%- include("template/cabecera" , {title : "Crear nuevo mascota"})   %>
+
+    <div class="container">
+        <h1>Crear</h1>
+        <form action="/mascotas" method="POST">
+         <input
+           type="text"
+           placeholder="Agregar nombre"
+           class="form-control my-2"
+           name="nombre">
+            <input
+           type="text"
+           placeholder="Agregar descripcion"
+           class="form-control my-2" 
+           name="descripcion">
+           <div class="d-grid gap-2">
+            <button class="btn btn-success" type="submit">Agregar</button>
+          
+          </div>
+         
+          </div>
+        </form>
+    </div>
+    <%- include("template/footer")    %>
+
+```
+2. mascotas.ejs
+```js
+<!-- views/mascotas.ejs -->
+<%- include("template/cabecera" , {title: "titulo"})    %>
+ <div class="container">
+   <h1>Crud Mongo</h1>
+  <div class="d-grid gap-2">
+    <a type="button" class="btn btn-success  my4" href="mascotas/crear">Crear nueva mascota</a>
+    </div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Descripcion</th>
+            <th scope="col">Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+            <% if (listaMascotas.length > 0) { %>
+              
+                <% listaMascotas.forEach(mascota => { %>
+                    <tr>
+                        <th scope="row"><%= mascota.id  %> </th>
+                        <td><%= mascota.nombre  %> </td>
+                        <td><%= mascota.descripcion  %> </td>
+                        <td>@mdo</td>
+                    </tr>
+                <% }) %> 
+        
+            <% } %>
+       
+          
+        </tbody>
+      </table>
+   
+   
+ </div>
+
+<%- include("template/footer")    %>
+
+```
+
+:::tip 
+- Ahora vamos a trabajar con el verbo POST
+- Nos permite recibir información 
+:::
+
+router/Mascota.js
+:::tip 
+La información se recibe por el body del requerimiento.
+:::
+
+```js
+// Mascota.js 
+router.get("/crear" , (req, res) => {
+    res.render('crear');
+})
+
+router.post('/' , async(req,res) => {
+    const body = req.body;
+    console.log(body);
+})
+
+module.exports = router;
+
+```
+### Guardar/insertar documento - metodo 1:
+- [info](https://mongoosejs.com/docs/models.html)
+
+:::tip 
+Se crea utilizando el esquema
+:::
+```js
+ const Mascota = require('../models/mascota');
+router.post('/' , async(req,res) => {
+    const body = req.body;
+    try {
+        // Creamos el documento/objeto
+        // const variable = new nombreesquema(objeto/documento)
+       const mascotaDB = new Mascota(body);
+       // Lo guardamos en la base de datos
+       await mascotaDB.save();
+    } catch(e) {
+        console.log(e)
+    }
+    console.log(body);
+})
+
+```
+:::tip
+usamos redirect(“ruta”) para direccionar a otra ruta.
+:::
+```js
+router.post('/' , async(req,res) => {
+    const body = req.body;
+    try {
+        // Creamos el documento/objeto
+        // const variable = new nombreesquema(objeto/documento)
+       const mascotaDB = new Mascota(body);
+       // Lo guardamos en la base de datos
+       await mascotaDB.save();
+       res.redirect("/mascotas");
+    } catch(e) {
+        console.log(e)
+    }
+    
+})
+
+```
+### Guardar/insertar documento - metodo 2:
+- Se crea utilizando el esquema:
+- Se crea y se guarda en la misma línea.
+
+```js
+router.post('/' , async(req,res) => {
+    const body = req.body;
+    try {
+    // Lo creamos y lo guardamos
+
+        // Creamos el documento/objeto en MongoDB
+        // create(objeto/documento)
+     await Mascota.create(body)
+      
+       res.redirect("/mascotas");
+    } catch(e) {
+        console.log(e)
+    }
+    
+})
+
+```
+
+## Get único documento
+router/Mascota.js
+- Utilizamos una url dinámica
+- Impleméntamos en la ruta  " :nombrevariable  "
+
+```js
+
+//  "/:nombrevariable"
+//la ruta es /mascotas/valordelnombrevariable
+// Ejemplo: http://localhost:3001/mascotas/620a5b245908e57941d2954c
+router.get('/:id' , async(req, res) => {
+   try {
+       // req.params.nombrevariable para obtener el valor de dicha variable
+       const id = req.params.id;
+       // Buscamos la primera mascota que _id sea igual a la const id.
+       const mascotaDB = await Mascota.findOne({_id : id})
+       res.render('detalle' ,  {mascota: mascotaDB , error:false})
+   } catch (error) {
+    res.render('detalle' ,  {error:true , mensaje: "No se encuentra el id seleccionado"})
+   }
+})
+module.exports = router;
+
+```
+views/detalle.ejs
+```js
+<%- include("template/cabecera" , {title : "Detalle de mascota" }) %>
+
+    <div class="container">
+        <h1>Detalle Mascota</h1>
+        <% if (error) { %>
+            <p>
+                <%= mensaje %>
+            </p>
+            <div class="d-grid gap-2">
+                <a href="/mascotas" class="btn btn-dark ">Volver a Mascotas</a>
+            </div>
+            <% } %>
+                <% if (!error) { %>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Descripcion</th>
+                                <th scope="col">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+
+                            <tr>
+                                <th scope="row">
+                                    <%= mascota.id %>
+                                </th>
+                                <td>
+                                    <%= mascota.nombre %>
+                                </td>
+                                <td>
+                                    <%= mascota.descripcion %>
+                                </td>
+                                <td>@mdo</td>
+                            </tr>
+
+
+
+
+                        </tbody>
+                    </table>
+
+                    <% } %>
+    </div>
+    <%- include("template/footer") %>
+
+```
+
+views/mascotas.ejs
+```js
+
+<!-- views/mascotas.ejs -->
+<%- include("template/cabecera" , {title: "titulo"})    %>
+ <div class="container">
+   <h1>Crud Mongo</h1>
+  <div class="d-grid gap-2">
+    <a type="button" class="btn btn-success  my4" href="mascotas/crear">Crear nueva mascota</a>
+    </div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Descripcion</th>
+            <th scope="col">Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+            <% if (listaMascotas.length > 0) { %>
+              
+                <% listaMascotas.forEach(mascota => { %>
+                    <tr>
+                        <th scope="row"><%= mascota.id  %> </th>
+                        <td><%= mascota.nombre  %> </td>
+                        <td><%= mascota.descripcion  %> </td>
+                        <td> <a href="mascotas/<%= mascota.id  %>" class="btn btn-warning btn-sm">Editar</a></td>
+                    </tr>
+                <% }) %> 
+        
+            <% } %>
+       
+          
+        </tbody>
+      </table>
+   
+   
+ </div>
+
+<%- include("template/footer")    %>
+
+```
+
+## Delete documento
+- Vamos a usar el verbo http Delete para eliminar.
+- Una petición delete se crea por el método fetch ya que el formulario HTML no lo envia.
+- Vamos a hacer una respuesta en json
+
+router/Mascota.js
+```js
+// mascotas/valordelavariableid
+router.delete('/:id' , async(req , res) =>  {
+    const id = req.params.id;
+    try {
+        // Buscamos la mascota por la _id y lo eliminamos
+          // Si se elimina correctamente devuelve el documento que se borro
+        const mascotaDB = await Mascota.findByIdAndDelete({_id : id});
+      
+        if (mascotaDB) {
+               // respuesta en json 
+               res.json( { estado : true , mensaje: "eliminado!"})
+        } else {
+              // respuesta en json
+              res.json({estado: false ,mensaje: "fallo al eliminar!"})
+        }
+    } catch (error) {
+         console.log(error)
+    }
+})
+module.exports = router;
+
+```
+views/detalle.ejs
+```js
+
+<%- include("template/cabecera" , {title : "Detalle de mascota" }) %>
+
+    <div class="container">
+        <h1>Detalle Mascota</h1>
+        <% if (error) { %>
+            <p>
+                <%= mensaje %>
+            </p>
+            <div class="d-grid gap-2">
+                <a href="/mascotas" class="btn btn-dark ">Volver a Mascotas</a>
+            </div>
+            <% } %>
+                <% if (!error) { %>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Descripcion</th>
+                                <th scope="col">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+
+                            <tr>
+                                <th scope="row">
+                                    <%= mascota.id %>
+                                </th>
+                                <td>
+                                    <%= mascota.nombre %>
+                                </td>
+                                <td>
+                                    <%= mascota.descripcion %>
+                                </td>
+                                <td> <button  id="btnEliminar" class="btn btn-danger btn-sm" data-id="<%= mascota.id %>">Eliminar</button></td>
+                            </tr>
+
+
+
+
+                        </tbody>
+                    </table>
+
+                    <% } %>
+    </div>
+    <%- include("template/footer") %>
+    <script>
+      const btnEliminar = document.getElementById("btnEliminar");
+     btnEliminar.addEventListener("click", async () => {
+         const id = btnEliminar.dataset.id;
+         try {
+             // Enviamos una solicitud delete por fetch (Si no especificamos que es delete se hace get)
+             const data = await fetch(`/mascotas/${id}` , {method: 'delete'});
+             const res = await data.json();
+             if (res.estado) {
+                //  Rediccionamos
+                 window.location.href = "/mascotas"
+             } else {
+                 console.log(res);
+             }
+         } catch (error) {
+             console.log(error)
+         }
+     })
+
+    </script>
+
+```
+## Editar documento
+
+
+
+- Utilizamos el metodo http put que generalmente se usa para modificar.
+- Vamos a utilizar el body del requirimiento por lo tanto hacer los arreglos necesarios (ver el apartado de bodyparser)
+- El form (HTML) solo soporta GET Y POST . Por lo tanto para usar put vamos a usar javascript(fetch) , igual que como Delete.
+
+router/Mascota.js
+```js
+router.put('/:id' , async(req,res) => {
+    const id = req.params.id;
+    const body = req.body;
+    try {
+        // Encontrar la mascota y modificarla
+        // Parametros findByIdAndUpdate(id a buscar , los datos nuevos , una opcion para evitar un warning)
+         // devuelve el documento modificado
+       const mascotaBD = await Mascota.findByIdAndUpdate(id , body , {useFindAndModify: false});
+      
+       res.json({estado: true , mensaje:"Editado"});
+    } catch (error) {
+        console.log(error)
+        res.json({estado: false , mensaje:"Fallamos"});
+    }
+})
+module.exports = router;
+
+```
+
+:::tip
+- Como es para manipular una BD usamos una función async await
+- Para leer el body tmb debe estar configurado el bodyParser para JSON
+:::
+
+detalle.ejs
+```js
+<%- include("template/cabecera" , {title : "Detalle de mascota" }) %>
+
+    <div class="container">
+        <h1>Detalle Mascota</h1>
+        <% if (error) { %>
+            <p>
+                <%= mensaje %>
+            </p>
+            <div class="d-grid gap-2">
+                <a href="/mascotas" class="btn btn-dark ">Volver a Mascotas</a>
+            </div>
+            <% } %>
+                <% if (!error) { %>
+                    <form action="" id="formEditar" data-id="<%= mascota.id %>">
+                        <input
+                        type="text"
+                        placeholder="Agregar nombre"
+                        class="form-control my-2"
+                        name="nombre" 
+                        value = " <%= mascota.nombre %>"
+                        id="nombreInput">
+                         <input
+                        type="text"
+                        placeholder="Agregar descripcion"
+                        class="form-control my-2" 
+                        name="descripcion"
+                        value = " <%= mascota.descripcion %>"
+                        id="descripcionInput">
+                        <div class="d-grid gap-2">
+                         <button class="btn btn-warning" type="submit" >Editar</button>
+                        </div>
+                    </form>
+                    <button  id="btnEliminar" class="btn btn-danger btn-sm mt-5" data-id="<%= mascota.id %>" type="submit">Eliminar</button>
+                   
+
+                    <% } %>
+  
+    <%- include("template/footer") %>
+    <script>
+      const btnEliminar = document.getElementById("btnEliminar");
+     btnEliminar.addEventListener("click", async () => {
+         const id = btnEliminar.dataset.id;
+         try {
+             // Enviamos una solicitud delete por fetch (Si no especificamos que es delete se hace get)
+             const data = await fetch(`/mascotas/${id}` , {method: 'delete'});
+             const res = await data.json();
+             if (res.estado) {
+                //  Rediccionamos
+                 window.location.href = "/mascotas"
+             } else {
+                 console.log(res);
+             }
+         } catch (error) {
+             console.log(error)
+         }
+     })
+     const formularioEditar = document.getElementById("formEditar");
+
+     formularioEditar.addEventListener('submit' , async (e) => {
+         e.preventDefault();
+         // Seleccionamos el input que contiene el nombre a traves de su atributo name
+         //elements['valordelatributoname']
+         const nombre = formularioEditar.elements['nombre'].value;
+         const descripcion = document.querySelector('#descripcionInput').value;
+         const id = formularioEditar.dataset.id;
+         console.log(nombre , descripcion , id);
+         try {
+             // En el fetch enviamos informacion(JSON) a traves del body
+            const data = await fetch(`/mascotas/${id}` , {method: 'put' , 
+                headers: {
+                    //Le indicamos que vamos a mandar un JSON
+                    'Content-Type': 'application/json'
+                } , 
+                body: JSON.stringify({
+                //Enviamos un JSON a traves del body
+                // nombre = const nombre 
+                //descripcion = const descripcion
+                // Si la propiedad y el valor tienen el mismo nombre, no hace falta especificar el valor
+                nombre , descripcion
+            }) });
+            const res = await data.json();
+            if (res.estado) {
+                 //  Rediccionamos
+                 window.location.href = "/mascotas"
+            } else {
+                console.log(res)
+            }
+         }catch (e) {
+             console.log(e)
+         }
+     }) 
+    </script>
+
+```

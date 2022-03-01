@@ -378,3 +378,338 @@ index.ejs:
      <%- include("template/footer")    %>
 
 ```
+## HBS (Motor de plantilla)
+:::warning
+Omitimos los temas explicados en EJS (Render, instalación, especificar ruta de las vistas, etc)
+:::
+- [Modulo a utilizar](https://www.npmjs.com/package/hbs)
+- [info](https://handlebarsjs.com)
+- Se utilizaba Antes de vue y react
+- Tiene muchas limitantes.
+
+:::tip 
+El nombre del proyecto debe ser diferente al nombre del framework/librería/etc para evitar errores.
+:::
+
+:::tip 
+[Existe una variante](https://github.com/ericf/express-handlebars)
+:::
+
+:::warning
+Los ejemplos para mostrar el funcionamiento de  hbs estan hecho con un proyecto aparte(independiente al resto)
+:::
+
+1. Iniciamos el proyecto con npm init -y
+2. Instalamos varios modulos en node (Se puede hacer en solo una linea, separandolo con espacio en blanco)
+```powershell
+npm i express hbs
+```
+:::tip
+en HBS también se debe registrar los Partials (Equivalente a las plantillas(Include) de ejs).
+:::
+app.js
+```js
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 3001;
+// Motor de plantilla
+const hbs = require('hbs');
+// Registramos los parcials(template/plantilla/Include)
+hbs.registerPartials(__dirname + '/views/partials', function (err) {});
+// Especificamos el motor de plantilla a utilizar
+app.set('view engine', 'hbs');
+// Especificamos la carpeta en donde estan ubicados los archivos.hbs
+app.set("views", __dirname + "/views");
+// Especificamos la carpeta public
+app.use(express.static(__dirname + "/public"));
+
+// Aquí detallar rutas
+
+app.get('/' , (req,res) => {
+    // Renderizamos index.hbs y le pasamos informacion ({})
+    res.render('index' , {titulo : 'Inicio'});
+})
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
+
+```
+views/index.hbs:
+- [Snippet hbs en VSC](https://marketplace.visualstudio.com/items?itemName=RuhanRK.hbs-snippets)
+```hbs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>titulo dinamico</title>
+</head>
+<body>
+    <h1>{{titulo}}</h1>
+</body>
+</html>
+
+```
+## Nodemon hbs
+
+:::warning 
+Nodemon no lee la carpeta partials (donde se contiene las plantillas).
+:::
+Solucion:
+1. Crear el archivo nodemon.json en la raiz del proyecto 
+2. Poner lo siguiente en el json
+```js
+{
+    "ext": "js,json,hbs"
+}
+
+```
+## partials
+- Son las plantillas(Include de ejs).
+- Son para no estar duplicando el código y que sea dinamico.
+
+1. Creamos el archivo header.hbs dentro de la carpeta partials
+```hbs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>titulo dinamico</title>
+</head>
+<body>
+
+```
+Creamos el archivo footer.hbs dentro de la carpeta partials
+```hbs
+</body>
+</html>
+
+```
+y Dentro del index.hbs llamamos a los dos archivos 
+```hbs
+
+{{> header}}
+
+    <h1>{{titulo}}</h1>
+{{> footer}}
+
+```
+Ejemplo pasando informacion: 
+
+header.hbs:
+```hbs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+<body>
+
+```
+index.hbs:
+```hbs
+{{> header title="titulo de inicio"}}
+
+    <h1>{{titulo}}</h1>
+{{> footer}}
+
+```
+
+## if
+- [info](https://handlebarsjs.com/guide/builtin-helpers.html#if)
+
+app.js
+```js
+// Aquí detallar rutas
+
+app.get('/' , (req,res) => {
+    // Renderizamos index.hbs y le pasamos informacion ({})
+    res.render('index' , {titulo : 'Inicio'});
+})
+
+app.get('/servicio' , (req,res) => {
+   res.render('servicio' , {titulo: 'Servicio' , estado : true , servicio: 'Curso de Node' })
+})
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
+
+```
+servicios.hbs(views/servicio.hbs):
+```hbs
+{{> header title="titulo de servicio"}}
+
+    <h1>{{titulo}}</h1>
+    {{#if estado}}
+      <p>{{servicio}}</p>
+    {{/if}}
+{{> footer}}
+
+```
+### if/else
+```hbs
+{{> header title="titulo de servicio"}}
+
+    <h1>{{titulo}}</h1>
+    {{#if estado}}
+      <p>{{servicio}}</p>
+      {{else}}
+       <p>No existe el servicio</p>
+    {{/if}}
+{{> footer}}
+
+```
+
+## Each
+- [info](https://handlebarsjs.com/guide/builtin-helpers.html#each)
+
+app.js
+```js
+app.get('/equipo' , (req,res) => {
+  res.render('equipo' , {
+    titulo: 'Equipo' , 
+    equipo: ['Diego' , 'Federico' , 'Gonzalo']
+  })
+})
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
+
+```
+equipo.hbs:
+```hbs
+{{> header title="titulo de equipo"}}
+
+    <h1>{{titulo}}</h1>
+     <ul>
+         {{#each equipo}}
+        <li>{{this}}</li>
+         {{/each}}
+     </ul>
+{{> footer}}
+
+```
+Otro ejemplo pero con objetos en un array:
+
+app.js:
+```js
+app.get('/equipo' , (req,res) => {
+  res.render('equipo' , {
+    titulo: 'Equipo' , 
+    equipo: [{id: 'jaja' , nombre:'Rodrigo'} , {id: 'jiji' , nombre:'Pedro'} ]
+  })
+})
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
+
+```
+
+equipo.hbs:
+
+```hbs
+{{> header title="titulo de equipo"}}
+
+    <h1>{{titulo}}</h1>
+     <ul>
+         {{#each equipo}}
+        <li>{{this.nombre}} {{this.id}}</li>
+         {{/each}}
+     </ul>
+{{> footer}}
+
+```
+
+## 404
+
+```js
+// al final de todas nuestras rutas
+app.use((req, res, next) => {
+    res.status(404).render("404", {
+        titulo: "404",
+        descripcion: "Página no encontrada"
+    })
+})
+
+```
+
+app.js:
+```js
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 3001;
+// Motor de plantilla
+const hbs = require('hbs');
+// Registramos los parcials(template/plantilla/Include)
+hbs.registerPartials(__dirname + '/views/partials', function (err) {});
+// Especificamos el motor de plantilla a utilizar
+app.set('view engine', 'hbs');
+// Especificamos la carpeta en donde estan ubicados los archivos.hbs
+app.set("views", __dirname + "/views");
+// Especificamos la carpeta public
+app.use(express.static(__dirname + "/public"));
+
+// Aquí detallar rutas
+
+app.get('/' , (req,res) => {
+    // Renderizamos index.hbs y le pasamos informacion ({})
+    res.render('index' , {titulo : 'Inicio'});
+})
+
+app.get('/servicio' , (req,res) => {
+   res.render('servicio' , {titulo: 'Servicio' , estado : false , servicio: 'Curso de Node' })
+})
+
+app.get('/equipo' , (req,res) => {
+  res.render('equipo' , {
+    titulo: 'Equipo' , 
+    equipo: [{id: 'jaja' , nombre:'Rodrigo'} , {id: 'jiji' , nombre:'Pedro'} ]
+  })
+})
+// al final de todas nuestras rutas
+app.use((req, res, next) => {
+  res.status(404).render("404", {
+      titulo: "404",
+      descripcion: "Página no encontrada"
+  })
+})
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
+
+```
+view/404.hbs:
+```hbs
+{{> header title="titulo"}}
+
+    <h1>{{titulo}}</h1>
+     <p>{{descripcion}}</p>
+{{> footer}}
+
+```
+## CSS, JS, img, etc
+- Como ya tenemos configurada nuestra carpeta public, es ahí donde añadimos los archivos en cuestión.
+```html
+<!--Ejemplo para css bootstrap: public/css/archivo.css -->
+<link rel="stylesheet" href="/css/bootstrap.min.css">
+
+```
+```html
+<!--Ejemplo para JS bootstrap: public/js/archivo.js -->
+<script src="/js/bootstrap.min.js"></script>
+```
+:::tip 
+Es lo mismo que en ejs (buscar)
+:::
+##  Material Kit
+- Es bootstrap modificado
+- [Documentacion](https://demos.creative-tim.com/material-kit/docs/2.0/getting-started/introduction.html)
+- [Descarga](https://www.creative-tim.com/product/material-kit)

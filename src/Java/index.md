@@ -667,7 +667,7 @@ public class Oficina {
 ```
 ### Generar documentacion
 1. Project --- Generate javadoc
-2. Seleccionar las clave y las ruta
+2. Selecciona  la ruta
 3. Next - Finish
 
 :::tip 
