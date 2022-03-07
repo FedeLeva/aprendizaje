@@ -572,6 +572,13 @@ public abstract class Dispositivo {
 - Recorrer un enum con el metodo values() que lo convierte en un Array y ordinal() para la posicion.
 - Solo se puede invocar metodos en bloques de codigo {} pero no al inicio de la Clase (bloques de codigo{} perteneciente a metodos , constructores , etc)
 - El inicio de la clase es solo para inicializar variables/atributos
+- table.getRowCount() y  table.getColumnCount() empiezan en  1
+- index = comienza en 0
+- enum = tablas en BD = id empieza en 1
+- ordinal devuelve un indice del enum (empieza en 0)
+- ojo con los metodos que cierran la conexion de la  BD
+- init = Falta inicializar una instancia de algo con el new nombreClase()
+- En un hashmap usar la key como id
 ## Operaciones
 ### Asignacion
 ![Asignacion](https://www.arkaitzgarro.com/java/images/cap04/operador.png)
