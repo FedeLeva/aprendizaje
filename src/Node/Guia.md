@@ -1361,16 +1361,436 @@ const redireccionamiento = async(req,res) => {
    module.exports = {leerUrls , agregarUrl , eliminarUrl , editarUrlForm , editarUrl , redireccionamiento};
 
 ```
-## Pasar a otro
-:::tip 
-JWT = SESION SIN ESTADO
-:::
-:::tip 
-Session y  Passport(asi se trabajaba antes)  puede ser remplazado por JWT
 
-Flash para comunicar mensaje
-::: 
 
-:::tip 
-API REST = NO TRABAJAR CON SESIONES (NO GUARDAR SESIONES EN EL SERVIDOR)
+
+## Registrar usuario
+controllers/authController.js
+```js
+
+const User = require("../models/User")
+const {nanoid} = require('nanoid');
+const loginForm = (req,res) => {
+       res.render('login')
+}
+
+const registerForm = (req,res) => {
+      res.render('register')
+}
+const registerUser = async (req,res) => {
+    const {userName , email , password} = req.body
+    try {
+        // Buscamos un usuario por el email
+       let user = await User.findOne({email:email});
+       // Si existe el usuario , retornamos un error
+       if (user) throw new Error('ya existe el usuario');
+       // Si no existe , creamos una instancia del modelo
+// userName:userName , email:email , password:password
+      user = new User({userName , email , password  , tokenConfirm: nanoid()});
+      user.save()
+      res.json(user);
+    } catch(e) {
+        res.json({error: e.message});
+    }
+}
+
+module.exports = {
+    loginForm , registerForm , registerUser
+}
+
+```
+routes/auth.js
+```js
+const express = require('express');
+const { loginForm, registerForm, registerUser } = require('../controllers/authController');
+const router = express.Router();
+router.get("/login", loginForm);
+//Respondemos una peticion GET  a auth/register 
+router.get("/register", registerForm);
+// Respondemos una peticion POST  a auth/register 
+router.post("/register" , registerUser);
+module.exports = router;
+
+```
+- http://localhost:5000/auth/login
+
+- http://localhost:5000/auth/register
+
+views/register.hbs
+```hbs
+<h1 class="text-center my-5">Registro de usuarios nuevos</h1>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form action="/auth/register" method="post">
+            <input type="text" placeholder="Ingrese nombre" class="form-control mb-2" value="usuario" name="userName">
+            <input type="text" placeholder="Ingrese email" name="email" class="form-control mb-2"
+                value="usuario@test.com">
+            <input type="password" placeholder="Ingrese password" name="password" class="form-control mb-2"
+                value="123123">
+            <input type="password" placeholder="Repita password" name="repassword" class="form-control mb-2"
+                value="123123">
+            <button class="btn btn-primary" type="submit">Registrar usuario</button>
+        </form>
+    </div>
+</div>
+
+```
+
+## Respuestas
+- res.render() = Renderizar(Convertir en html) un archivo
+- res.json() = Para responder en json
+- res.send() = Para responder de forma sencilla.
+
+
+## Modelo Usuario
+- Definir el esquema sirve para hacer validaciones de DB
+- juntándolo con las validaciones del backend y frontend la app es muy segura.
+- Si no se respeta la estructura(esquema) a la hora de crear un documento, se genera un error.
+models/User.js
+
+```js
+const mongoose = require('mongoose')
+// Obtenemos la clase Schema de mongosee
+const {Schema} = mongoose
+
+const UserSchema = new Schema({
+    // Estructura de los documentos
+   //columna/propiedad userName
+   // Es de tipo String ,y obligatorio
+   // Se convierte en minuscula el valor
+   userName: {
+       type:String,
+       lowercase:true,
+       required:true,
+   } ,
+   //columna/propiedad email
+   // Es de tipo String , obligatorio y unico
+   // Se convierte en minuscula el valor
+   email: {
+    type:String,
+    lowercase:true,
+    required:true ,
+    unique : true ,
+    // Indexar
+    index: {unique : true} , 
+} ,
+//columna/propiedad password
+   // Es de tipo String y obligatorio 
+password: {
+    type:String ,
+    required : true ,
+
+} ,
+//columna/propiedad tokenConfirm
+   // Es de tipo String 
+   // Valor por defecto: null
+tokenConfirm : {
+    type:String ,
+    default:null,
+} ,
+//columna/propiedad cuentaConfirmada
+   // Es de tipo boolean 
+   // Valor por defecto: false
+cuentaConfirmada: {
+    type:Boolean,
+    default:false
+}
+
+})
+// Llevamos el esquema hacia un modelo y lo exportamos
+module.exports = mongoose.model("User" , UserSchema)
+
+```
+
+:::tip Observacion
+- La exportación se hace por defecto , por lo tanto se le puede cambiar el nombre al importarlo.
+- Al momento de instanciar un modelo, solo las propiedades que contiene el esquema se van a instanciar y no propiedades inexistentes.
 :::
+
+:::tip lean
+- Cuando lo guardamos en la base de datos, usamos el método save() del modelo.
+- el método save() pertenece a un objeto mongoDB , esa es la diferencia entre un documento como objeto js (usando lean) y un documento como objeto mongoDB.
+:::
+
+## Cifrar la contraseña
+### Creamos un hash
+:::warning
+NUNCA GUARDAR LA CONTRASEÑA EN TEXTO PLANO
+:::
+- Usamos el modulo [bcryptjs](https://www.npmjs.com/package/bcryptjs)
+```powershell
+npm i bcryptjs
+```
+
+
+### Tutorial de bycriptjs
+1.	Importarlo
+2.	Generar saltos 
+- Los saltos son como palabras aleatorias que se generan a partir de la contraseña para que no se pueda descifrar la misma
+- Mientras el valor sea más alto , más recursos consume pero brinda mas seguridad
+-  La cantidad de veces que se va a encriptar la contraseña en cadena.
+3.	Encriptamos la contraseña con los saltos.
+
+Se recomienda usar el async
+
+## pre mongosee
+- [info](https://mongoosejs.com/docs/api.html#schema_Schema-pre)
+- Es  un hook(gancho)  
+- hook : Se ejecuta antes de algo (antes de alguna función/metodo)
+
+Con pre vamos a hacer que  antes que se guarde en la BD, haga alguna acción (en nuestro caso encriptar).
+
+models/User.js:
+```js
+const bycript = require('bcryptjs');
+const mongoose = require('mongoose')
+// Obtenemos la clase Schema de mongosee
+const {Schema} = mongoose
+
+const UserSchema = new Schema({
+    // Estructura de los documentos
+  // Si no se respeta la estructura a la hora de crear un documento, se genera un error.
+   //columna/propiedad userName
+   // Es de tipo String ,y obligatorio
+   // Se convierte en minuscula el valor
+   userName: {
+       type:String,
+       lowercase:true,
+       required:true,
+   } ,
+   //columna/propiedad email
+   // Es de tipo String , obligatorio y unico
+   // Se convierte en minuscula el valor
+   email: {
+    type:String,
+    lowercase:true,
+    required:true ,
+    unique : true ,
+    // Indexar
+    index: {unique : true} , 
+} ,
+//columna/propiedad password
+   // Es de tipo String y obligatorio 
+password: {
+    type:String ,
+    required : true ,
+
+} ,
+//columna/propiedad tokenConfirm
+   // Es de tipo String 
+   // Valor por defecto: null
+tokenConfirm : {
+    type:String ,
+    default:null,
+} ,
+//columna/propiedad cuentaConfirmada
+   // Es de tipo boolean 
+   // Valor por defecto: false
+cuentaConfirmada: {
+    type:Boolean,
+    default:false
+}
+
+})
+// Se va a ejecutar  funcion() antes de llamar a nombrefuncion()
+// Entonces cuando se llame a nombrefuncion() , tambien es llamada funcion()
+// pre(nombrefuncion , funcion)
+userSchema.pre('save' , async function(next){
+ // Al ser una una instancia , podemos usar el this
+   const user = this
+   //Si la contraseña no ha sido modificada , que siga (llame al nombrefuncion())
+   if (!user.isModified('password')) return next();
+   // Si la contraseña fue modificada o es nueva la contraseña
+   try {
+       // Especificamos la cantidad de saltos 
+       const salt = await bycript.genSalt(10)
+       // Ciframos la contraseña
+       const hash = await bycript.hash(user.password , salt);
+      
+       user.password = hash;
+       // pase a la nombrefuncion()
+       next();
+   } catch(error) {
+       console.log(error);
+       next()
+   }
+
+})
+
+
+// Llevamos el esquema hacia un modelo y lo exportamos
+module.exports = mongoose.model("User" , UserSchema)
+
+```
+
+:::tip logica
+Antes que se guarde el usuario en la BD , se cifra la contraseña
+:::
+
+## ConfirmarCuenta
+
+routes/auth.js
+```js
+const { loginForm, registerForm, registerUser, confirmarCuenta } = require('../controllers/authController');
+// Respondemos una peticion GET a auth/confirmarCuenta/xxxxxxx
+// variable token = xxxxxxx
+router.get("/confirmarCuenta/:token" , confirmarCuenta )
+module.exports = router;
+
+```
+controllers/authController.js
+```js
+const registerUser = async (req,res) => {
+    const {userName , email , password} = req.body
+    try {
+        // Buscamos un usuario por el email
+       let user = await User.findOne({email:email});
+       // Si existe el usuario , retornamos un error
+       if (user) throw new Error('ya existe el usuario');
+       // Si no existe , creamos una instancia del modelo
+      user = new User({userName , email , password  , tokenConfirm: nanoid()});
+      user.save()
+    res.redirect('/auth/login');
+
+
+    } catch(e) {
+        res.json({error: e.message});
+    }
+}
+const confirmarCuenta = async(req,res) => {
+
+}
+module.exports = {
+    loginForm , registerForm , registerUser , confirmarCuenta
+}
+
+```
+Modificamos confirmarCuenta:
+```js
+const confirmarCuenta = async(req,res) => {
+   
+   //Leemos las variables de la ruta (variable token en este caso)
+  const {token} = req.params;
+
+  try {
+      // Buscamos el usuario por el token(tokenConfirm) en la BD
+      
+       const user = await User.findOne({tokenConfirm:token});
+       // Si no existe el usuario
+       if (!user) throw new Error('No existe el usuario')
+       // Si existe el usuario
+       // Confirmamos la cuenta
+       user.cuentaConfirmada = true;
+       // Eliminamos el tokenConfirm
+       user.tokenConfirm = null;
+       // Lo guardamos en la BD
+       // el metodo save() lo contiene el objeto de mongoDB user
+       await user.save();
+       res.redirect('/auth/login');
+  }catch(error) {
+    res.json({error: error.message});
+  }
+}
+
+```
+## Iniciar sesion
+
+views/login.hbs
+```hbs
+
+<h1 class="text-center my-5">Login de usuarios</h1>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form action="/auth/login" method="post">
+          
+            <input type="text" placeholder="Ingrese email" name="email" class="form-control mb-2"
+                value="usuario@test.com">
+            <input type="password" placeholder="Ingrese password" name="password" class="form-control mb-2"
+                value="123123">
+           
+            <button class="btn btn-primary" type="submit">Acceder</button>
+        </form>
+    </div>
+</div>
+
+```
+routes/auth.js
+```js
+
+const { loginForm, registerForm, registerUser, confirmarCuenta , loginUser } = require('../controllers/authController');
+router.get("/login", loginForm);
+router.post("/login", loginUser);
+
+```
+controllers/authController.js
+```js
+const registerForm = (req,res) => {
+      res.render('register')
+}
+const loginUser = async (req,res) => {
+  
+}
+module.exports = {
+    loginForm , registerForm , registerUser , confirmarCuenta , loginUser
+}
+
+```
+## Añadirle metodos al esquema mongoDB
+- Le añadimos un método adicional al esquema, el cual lo adquiere el modelo posteriormente.
+models/User.js
+```js
+//esquema.methods.nombre_metodo = funcion
+// Le añadimos un metodo   lllamada comparePassword al esquema
+// Tenemos acceso al this al ser un metodo 
+UserSchema.methods.comparePassword = async function(password) {
+    //bycript.compare(contraseña , clave cifrada(hash))
+    // Compara una contraseña no cifrada con una cifrada
+    return await bycript.compare(password , this.password)
+}
+
+// Llevamos el esquema hacia un modelo y lo exportamos
+module.exports = mongoose.model("User" , UserSchema)
+
+```
+Modificamos el loginUser(req,res) de authController.js
+```js
+
+const loginUser = async (req,res) => {
+  const {email,password} = req.body;
+  try {
+    // email:email
+      const user = await User.findOne({email})
+      //Si no existe el usuario 
+      if (!user) throw new Error('No existe este email');
+      // Si existe el usuario
+      // Verifica que la cuenta esta confirmada
+      if (!user.cuentaConfirmada) throw new Error('Falta confirmar cuenta');
+      //Usamos el metodo que creamos
+      //Que devuelve true si la contraseña es correcta
+      // Verifica que la contraseña sea valida
+      if (!await user.comparePassword(password)) throw new Error('Contraseña no correcta');
+      // Y si llego hasta aca , el usuario el valido
+      res.redirect('/');
+  } catch(error) {
+         console.log(error);
+         res.send(error.message);
+  }
+}
+
+module.exports = {
+    loginForm , registerForm , registerUser , confirmarCuenta , loginUser
+}
+
+
+```
+## Consejos
+- ¡Si esta undefined es porque no estas esperando el resultado de la base de dato! USA EL AWAIT
+- En todas las operaciones con una BD usar el await
+- Al usar el redirect comprueba en la url si te dirige hacia donde especificaste.
+- Cuidado con poner dos respuestas en un bloque , que genera errores.
+- En las validaciones no darle información específica  de que se equivocó al cliente por tema de seguridad:
+Ejemplo: Mal: Fallo el usuario  Correcto: Fallo el Usuario o la contraseña
+- JWT = SESION SIN ESTADO
+- Session y  Passport(asi se trabajaba antes)  puede ser remplazado por JWT
+- Flash para comunicar mensaje
+- API REST = NO TRABAJAR CON SESIONES (NO GUARDAR SESIONES EN EL SERVIDOR)
