@@ -1783,6 +1783,580 @@ module.exports = {
 
 
 ```
+## Favicon
+en la carpeta public/img ponemos la imagen
+
+quedando: public/img/favicon.ico
+
+main.hbs
+```hbs
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desde HBS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+     <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+</head>
+
+```
+navbar.hbs
+```hbs
+ <a class="nav-link" href="/auth/register">Register</a>
+        <a class="nav-link" href="/auth/login">Login</a>
+        <a class="nav-link" href="/auth/logout">LogOut</a>
+
+```
+
+
+## Session
+- El middleware express-session almacena los datos de sesión en el servidor; sólo guarda el ID de sesión en la propia cookie, no los datos de sesión. De forma predeterminada, utiliza el almacenamiento en memoria y no está diseñado para un entorno de producción.
+- En una api rest NO SE DEBE trabajar con esto
+:::tip middleware
+Se ejecute antes que la petición llegue al servidor y la gestione.
+:::
+- Usaremos el modulo [express-sesion](http://expressjs.com/en/resources/middleware/session.html) para trabajar con la sesiones en express
+- Usaremos el modulo [connect-mongo](https://www.npmjs.com/package/connect-mongo) para guardar la sesion en la BD
+```powershell
+npm i express-session
+npm i connect-mongo
+
+```
+### Ejemplo
+index.js 
+```js
+const session = require("express-session");
+const express = require("express");
+const { create } = require("express-handlebars");
+ require('dotenv').config()
+  require('./database/conexion');
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+// Configuramos la sesion con el middleware.
+app.use(
+  session({
+      secret: 'palabra secreta',
+      // Para tratar errores
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto"
+  })
+);
+app.get("/ruta-protegida" , (req,res) => {
+  // Si existe una sesion devolvemos el usuario , en caso contrario mandamos "Sin sesion de usuario"
+  res.json(req.session.usuario || "Sin sesion de usuario")
+})
+app.get('/crear-session' , (req,res) => {
+  // Creamos la sesion
+  req.session.usuario = "usuario";
+  res.redirect('/ruta-protegida');
+})
+
+```
+:::tip Observacion
+La sesion se crea en la memoria (nuestra maquina)
+:::
+
+Tambien podemos destruir la sesion:
+```js
+app.get("/ruta-protegida" , (req,res) => {
+  // Si existe una sesion devolvemos el usuario , en caso contrario mandamos "Sin sesion de usuario"
+  res.json(req.session.usuario || "Sin sesion de usuario")
+})
+app.get('/crear-session' , (req,res) => {
+  // Creamos la sesion
+  req.session.usuario = "usuario";
+  res.redirect('/ruta-protegida');
+})
+app.get('/destruir-sesion' , (req,res) => {
+  // Destruirmos la sesion
+  req.session.destroy();
+  res.redirect('/ruta-protegida');
+})
+
+```
+
+
+## Flash
+- El flash es un área especial de la sesión que se utiliza para almacenar mensajes. Los mensajes se escriben en la memoria flash y se borran después de mostrarse al usuario. El flash generalmente se usa en combinación con redireccionamientos, lo que garantiza que el mensaje esté disponible para la siguiente página que se va a representar.
+- Viven solamente en una redirección. Si se navega en otro lado se destruye.
+- Usaremos el modulo [connect-flash](https://www.npmjs.com/package/connect-flash) para trabajar con flash
+-  Es un tipo de sesion , que solo vive una vez (en una redirección)
+```powershell
+npm i connect-flash
+```
+### Ejemplo
+index.js 
+```js
+const session = require("express-session");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+ require('dotenv').config()
+  require('./database/conexion');
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+// Configuramos la sesion con el middleware.
+app.use(
+  session({
+      secret: 'palabra secreta',
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto"
+  })
+);
+// Configuramos flash con el middleware
+app.use(flash());
+app.get('/mensaje-flash' , (req, res) => {
+  // Muestra un mensaje flash cuya key es "mensaje"
+  res.json(req.flash('mensaje'))
+})
+app.get('/crear-mensaje' , (req, res) => {
+  //flash( key , valor)
+  // La key contiene el valor
+  // key -> valor
+  //"mensaje" -> "este es un mensaje"
+  req.flash("mensaje" , "este es un mensaje")
+  res.redirect('/mensaje-flash');
+})
+
+```
+:::tip Observacion
+- A diferencia de session-express, la sesion solo dura en la redirección (solo una url)
+- Solo viven en una url.
+- Cuando llamas un mensaje flash, se destruye
+- Flash requiere de la configuración de la sesion (express-sesion)
+:::
+
+## Validaciones(Express-validator)
+:::warning Aclaracion
+- Los dos ejemplos anteriores(sesion y flash) no forman parte del proyecto 
+- Flash y Session se usaran  para mostrar los mensajes de errores de las validaciones
+:::
+- Vamos a usar el modulo [express-validator](https://express-validator.github.io/docs/) que nos sirve para validar
+```powershell
+npm i express-validator
+```
+:::tip Objetivo
+Antes que se guarde un usuario en la BD , vamos a validar los datos.
+:::
+
+routes/auth.js
+
+Configuramos una validacion del nombre usuario:
+```js
+const {body} = require('express-validator');
+// Tiene un array de middleware
+router.post("/register" ,  [
+    // body ("valor-atributoname" , "mensaje de error").metodo.metodo.metodo....
+    // trim() = Limpia los espacios en blanco del lado izquierda y derecho
+    // notEmpty()  = Para que no venga vacio 
+    // escape() = Para que solo mande caracteres y ignore html
+    body("userName" , "Ingrese un nombre válido").trim().notEmpty().escape(),
+] ,  registerUser);
+
+```
+:::tip Observacion 
+Un array de middleware sirve para implementar muchos middleware en una ruta
+:::
+authController.js
+```js
+const {validationResult } = require('express-validator');
+const registerUser = async (req,res) => {
+  // Hace la validacion que hemos configurado
+  const errors = validationResult(req);
+  //Si tiene errores , los devuelve
+  if (!errors.isEmpty()) {
+    return res.json(errors);
+  }
+    const {userName , email , password} = req.body
+
+```
+Configuramos las demas Validaciones:
+
+routes/auth.js
+```js
+// Tiene un array de middleware
+router.post("/register" ,  [
+    // body ("valor-atributoname" , "mensaje de error").metodo.metodo.metodo....
+    // trim() = Limpia los espacios en blanco del lado izquierda y derecho
+    // notEmpty()  = Para que no venga vacio d
+    // escape() = Para que solo mande caracteres y ignore html
+    body("userName" , "Ingrese un nombre válido").trim().notEmpty().escape(), 
+    //Validamos el email  para que tenga un formato valido
+    body("email" , "Ingrese un email valido").trim().isEmail().normalizeEmail() ,
+    //validamos la contraseña 
+    body("password" , "Contraseña de minimo 6 caracteres").trim().isLength({min:6}).escape()
+    // Hacemos una validacion personalizada para que las dos contraseñas coincida
+    // custom(funcion(value , {req})) 
+    // el value es lo que se evalua (lo que se envia en el formulario)
+    // {req} es para tener acceso al req(requirimiento)
+    .custom((value , {req}) =>{
+        // SI no son iguales
+        
+       if (value !== req.body.repassword) {
+           // No cumple la validacion
+           //Este seria el mensaje de error que se mandaria
+           throw new Error("No coinciden las contraseñas")
+       }
+       // Si cumple la validacion
+       return value
+    })
+] ,  registerUser);
+
+
+
+```
+:::tip Observacion 
+- Si se cumple la validación , no devuelve nada
+- Si no se cumple , devuelve el mensaje de error.
+:::
+### Validamos el login también:
+routes/auth.js
+```js
+router.post("/login", [body("email" , "Ingrese un email valido").trim().isEmail().normalizeEmail() ,  body("password" , "Contraseña de minimo 6 caracteres").trim().isLength({min:6}).escape()
+ ] , loginUser);
+
+```
+authController.js:
+```js
+const loginUser = async (req,res) => {
+  // Hace la validacion que hemos configurado
+  const errors = validationResult(req);
+  //Si tiene errores , los devuelve
+  if (!errors.isEmpty()) {
+    return res.json(errors);
+  }
+  const {email,password} = req.body;
+
+```
+## Validaciones en la vista
+Ponemos las Validaciones en la vista:
+:::tip
+Ahora si vamos a usar flash y session.
+:::
+
+:::tip array()
+Usamos el método array() el cual lo convierte en array.
+Empezamos con el login:
+:::
+authController.js
+```js
+const loginForm = (req,res) => {
+       res.render('login' , {mensajes : req.flash("mensajes")})
+}
+const loginUser = async (req,res) => {
+  // Hace la validacion que hemos configurado
+  const errors = validationResult(req);
+  //Si tiene errores , los devuelve
+  if (!errors.isEmpty()) {
+    req.flash("mensajes" , errors.array());
+    return res.redirect('/auth/login')
+  }
+  const {email,password} = req.body;
+  try {
+    // email:email
+      const user = await User.findOne({email})
+      //Si no existe el usuario 
+      if (!user) throw new Error('No existe este email');
+      // Si existe el usuario
+      // Verifica que la cuenta esta confirmada
+      if (!user.cuentaConfirmada) throw new Error('Falta confirmar cuenta');
+      //Usamos el metodo que creamos
+      //Que devuelve true si la contraseña es correcta
+      // Verifica que la contraseña sea valida
+      if (!await user.comparePassword(password)) throw new Error('Contraseña incorrecta');
+      // Y si llego hasta aca , el usuario el valido
+      res.redirect('/');
+  } catch(error) {
+    req.flash("mensajes" , [{msg: error.message}]);
+    return res.redirect('/auth/login')
+  }
+}
+
+```
+:::tip Observacion
+- Los valores que se mandan a la vista pueden ser null 
+- Si no se manda un valor , se considera null
+:::
+
+views/layouts/main.hbs
+```js
+<body>
+    {{> Navbar}}
+    <div class="container mt-5">
+      {{#each mensajes }}
+              <div class="alert alert-dark mb-2"> {{this.msg}}</div>
+      {{/each}}
+
+      
+ {{{body}}}
+    </div>
+     
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+      <script src="/js/app.js"></script>
+</body>
+
+```
+Ahora lo hacemos en el registro
+
+authController.js
+
+```js
+const registerForm = (req,res) => {
+      res.render('register' , {mensajes : req.flash("mensajes")})
+}
+const registerUser = async (req,res) => {
+  // Hace la validacion que hemos configurado
+  const errors = validationResult(req);
+  //Si tiene errores , los devuelve
+  if (!errors.isEmpty()) {
+    req.flash("mensajes" , errors.array());
+    return res.redirect('/auth/register')
+  }
+    const {userName , email , password} = req.body
+    try {
+        // Buscamos un usuario por el email
+       let user = await User.findOne({email:email});
+       // Si existe el usuario , retornamos un error
+       if (user) throw new Error('ya existe el usuario');
+       // Si no existe , creamos una instancia del modelo
+      user = new User({userName , email , password  , tokenConfirm: nanoid()});
+      user.save()
+      req.flash("mensajes" , [{msg: "Revisa tu correo electronico y valida cuenta"}]);
+      res.redirect('/auth/login');
+    } catch(error) {
+      req.flash("mensajes" , [{msg: error.message}]);
+      return res.redirect('/auth/register')
+    }
+}
+
+```
+Hacemos lo mismo en la ruta de confirmarCuenta
+```js
+const confirmarCuenta = async(req,res) => {
+   
+   //Leemos las variables de la ruta (variable token en este caso)
+  const {token} = req.params;
+
+  try {
+      // Buscamos el usuario por el token en la BD
+      
+       const user = await User.findOne({tokenConfirm:token});
+       // Si no existe el usuario
+       if (!user) throw new Error('No existe el usuario')
+       // Si existe el usuario
+       // Confirmamos la cuenta
+       user.cuentaConfirmada = true;
+       // Eliminamos el tokenConfirm
+       user.tokenConfirm = null;
+       // Lo guardamos en la BD
+       // el metodo save() lo contiene el objeto de mongoDB user
+       await user.save();
+       req.flash("mensajes" , [{msg: "Cuenta verificada"}]);
+       res.redirect('/auth/login');
+  }catch(error) {
+    req.flash("mensajes" , [{msg: error.message}]);
+    return res.redirect('/auth/login')
+  }
+}
+
+
+```
+## Passport
+- Podemos gestionar nosotros las sesiones o que las gestione un tercero como Passport
+- [Passport](http://www.passportjs.org)  es un modulo que te permite gestionar sesiones , ofrece un montón de estrategias para validar al usuario. Pero en el proyecto solo vamos a configurar Passport para que gestione las sesiones.
+```powershell
+npm install passport
+```
+
+### req.login()
+- Lo genera passport con las configuraciones que tiene configurada
+- Sirve para crear una sesion
+- Le manda el usuario a la función serializeUser para crear el req.user
+### serializerUser() 
+- Es una funcion que invoca req.login()
+- Crea la sesion con la ID y el nombre del usuario (los datos se pueden configurar)
+```js
+// Recibe un callback con dos parametros 
+// user = el usuario que le vamos a enviar 
+// done = Para decirle que se hizo con exito
+passport.serializeUser((user , done) => {
+  // done (errores , {los datos que van al req.user})
+  // La funcion done crea el req.user 
+   return done(null , {id: user._id , userName: user.userName})
+})
+
+```
+### deserializerUser() 
+- Verifica que la sesion sea correcta/valida para restablecer la sesion . 
+- Sirve Para mantener/actualizar la sesion cuando se actualiza el sitio web.
+```js
+// Tiene un callback con los mismos parametros que serializeUser()
+passport.deserializeUser((user , done) => {
+  // done(mensaje , usuario)
+  // la funcion done vuelve a crear el req.user
+  //  1 alternativa
+  return  done(null , user)
+  // 2 alternativa
+  return  done(null , {id:id , userName: user})
+})
+
+```
+### logout()
+- Cierra/Destruye la sesion
+### En el proyecto
+:::tip Observacion
+La configuración de passport se hace después de la configuración de session y flash , ya que este modulo  las utiliza (para gestionarlas)
+:::
+index.js
+```js
+const session = require("express-session");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+require('./database/conexion');
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+// Configuramos la sesion con el middleware.
+app.use(
+  session({
+      secret: 'palabra secreta',
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto"
+  })
+);
+// Configuramos flash con el middleware
+app.use(flash());
+// Configuramos passport con el middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Recibe un callback con dos parametros 
+// user = el usuario que le vamos a enviar 
+// done = Para decirle que se hizo con exito
+passport.serializeUser((user , done) => {
+  // done (errores , {los datos que van al req.user})
+  // La funcion done crea el req.user 
+   return done(null , {id: user._id , userName: user.userName})
+})
+
+// Tiene un callback con los mismos parametros que serializeUser()
+passport.deserializeUser(async (user , done) => {
+  // done(mensaje , usuario)
+  // la funcion done vuelve a crear el req.user
+
+ const userDB = await User.findById(user.id);
+  return  done(null , {id:userDB._id , userName: userDB.userName})
+})
+
+app.use(express.urlencoded({extended:true}))
+app.engine(".hbs", hbs.engine);
+app.set("view engine", ".hbs");
+app.set("views", "./views");
+app.use(express.static(__dirname + "/public"));
+app.use("/" , require('./routes/home'));
+app.use("/auth" , require('./routes/auth'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log("server andando 🔥 http://localhost:5000"));
+
+```
+## Middleware para verificar sesion
+- Tenemos que crear un middleware que verifique que el usuario tenga una sesion activa
+
+creamos el archivo verificarUser.js dentro de la carpeta middlewares
+```js
+module.exports = (req , res , next) => {
+  // El req ya va a tener todas las configuraciones de passport
+   // isAuthenticated() es un metodo de  passport
+    if (req.isAuthenticated()) {
+        // Si el usuario tiene una  sesion  activa que pase al siguiente middleware o que pase al servidor para poder gestionar la peticion.
+        return next();
+    }
+    // Si no tiene una sesion activa
+    res.redirect('/auth/login');
+}
+
+```
+routes/home.js
+```js
+const verificarUser = require('../middlewares/verificarUser');
+router.get("/" , verificarUser,  leerUrls)
+
+```
+authController.js
+:::tip Observacion
+- Usamos el método login de Passport para crear la sesion de usuario
+:::
+```js
+const loginUser = async (req,res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.flash("mensajes" , errors.array());
+    return res.redirect('/auth/login')
+  }
+  const {email,password} = req.body;
+  try {
+      const user = await User.findOne({email})
+      if (!user) throw new Error('No existe este email');
+      if (!user.cuentaConfirmada) throw new Error('Falta confirmar cuenta');
+      if (!await user.comparePassword(password)) throw new Error('Contraseña no correcta');
+      //login(usuario , callback)
+      // Con el parametro del callback gestiona los errores(seria como el catch)
+     req.login(user , function(error)  {
+              // Si hay errores 
+              if (error) throw new Error('Error al crear la sesion')
+               // Si no hay errores
+               res.redirect('/');
+     })
+
+  } catch(error) {
+    req.flash("mensajes" , [{msg: error.message}]);
+    return res.redirect('/auth/login')
+  }
+}
+
+```
+:::warning 
+Como la sesion esta en memoria (en la maquina), al reiniciar el servidor se pierde todo.
+:::
+## Cerrar sesion
+routes/auth.js
+```js
+const { loginForm, registerForm, registerUser, confirmarCuenta , loginUser, cerrarSesion } = require('../controllers/authController');
+router.get("/logout" , cerrarSesion)
+module.exports = router;
+
+```
+authController.js
+:::tip  Observacion
+Usaremos el método logout que viene del Passport
+:::
+```js
+const cerrarSesion = (req,res) => {
+  //el metodo logout de passport
+  // logout() = cierra la sesion
+  req.logout();
+  return res.redirect('/auth/login')
+}
+module.exports = {
+    loginForm , registerForm , registerUser , confirmarCuenta , loginUser , cerrarSesion
+}
+
+```
 ## Consejos
 - ¡Si esta undefined es porque no estas esperando el resultado de la base de dato! USA EL AWAIT
 - En todas las operaciones con una BD usar el await
