@@ -1350,12 +1350,12 @@ homeController.js
 const redireccionamiento = async(req,res) => {
     const {url} = req.params
     try {
-        // Buscamos un documento de la coleccion Url
-        // Lo buscamos por la propiedad shortUrl
-       const urlDB = await Url.findOne({shortUrl: url})
+       // Modificar en la documentacion
+       const urlDB = await Url.findOne({shortURL: url })
        res.redirect(urlDB.origin);
     } catch(error) {
-
+        req.flash("mensajes" , [{msg: "No existe esta url configurada"}]);
+        return res.redirect('/auth/login')
     }
 }
    module.exports = {leerUrls , agregarUrl , eliminarUrl , editarUrlForm , editarUrl , redireccionamiento};
@@ -1842,7 +1842,7 @@ app.use(
       // Para tratar errores
       resave: false,
       saveUninitialized: false,
-      name: "nombre de secreto"
+      name: "nombre de la palabra secreta"
   })
 );
 app.get("/ruta-protegida" , (req,res) => {
@@ -2357,6 +2357,1205 @@ module.exports = {
 }
 
 ```
+## CSRF protection middleware
+Sirve para:
+- Comprobar que los formularios sean definitivamente de nuestra web y no de un tercero.
+- Comprobar que los formularios son enviados desde nuestro sitio.
+- Para dicho objetivo usamos el modulo [csurf](https://github.com/expressjs/csurf)
+```powershell
+npm install csurf
+```
+Lo configuramos y lo llamamos en el proyecto
+
+index.js
+
+:::tip Objetivo 
+Habilitar Las protecciones (Validaciones)
+:::
+```js
+const session = require("express-session");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+require('./database/conexion');
+const csrf = require("csurf");
+//  configuramos csrf con el middleware 
+app.use(csrf());
+
+```
+:::tip 
+Se recomienda reiniciar el servidor (bajar nodemon y volver a levantarlo)
+:::
+
+:::tip Resultado
+Te tirara error en el home.
+
+Eso sucede porque no especificamos que el formulario proviene de nuestro sitio y por lo tanto es seguro.
+
+
+:::
+
+Para especificar que los formularios provienen de nuestro sitio, tenemos que enviarle un token a los formulario.
+
+Para enviar dicho token , vamos a usar un input de tipo hidden en todos los formularios
+:::tip warning
+el name del input no se puede modificar
+:::
+```html
+
+<input type="hidden" name="_csrf" value="{{csrfToken}}" />
+
+```
+En views/components/Form.hbs
+```hbs
+{{#if url}}
+    <form action="/editar/{{url._id}}" method="post">
+    <input type="hidden" name="_csrf" value="{{csrfToken}}" />
+<input  value="{{url.origin}}" type="text" placeholder="Ingrese URL" name="origin" class="form-control my-2">
+ <button type="submit" class="btn btn-warning w-100 mb-2">Editar</button>
+</form>
+{{else}}
+<form action="/" method="post">
+<input type="hidden" name="_csrf" value="{{csrfToken}}" />
+<input type="text" placeholder="Ingrese URL" name="origin" class="form-control my-2">
+ <button type="submit" class="btn btn-primary w-100 mb-2">Agregar Url</button>
+</form>
+
+{{/if}}
+
+```
+views/login.hbs
+```hbs
+
+<h1 class="text-center my-5">Login de usuarios</h1>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form action="/auth/login" method="post">
+          <input type="hidden" name="_csrf" value="{{csrfToken}}" />
+            <input type="text" placeholder="Ingrese email" name="email" class="form-control mb-2"
+                value="usuario@test.com">
+            <input type="password" placeholder="Ingrese password" name="password" class="form-control mb-2"
+                value="123123">
+           
+            <button class="btn btn-primary" type="submit">Acceder</button>
+        </form>
+    </div>
+</div>
+
+
+```
+
+y asi con todas las vistas que tengan formularios
+
+
+### Ahora vamos a mandarle ese dato a la vista cuando renderizamos
+
+authController.js
+
+#### De forma manual:
+
+```js
+const registerForm = (req,res) => {
+      res.render('register' , {mensajes : req.flash("mensajes") , csrfToken:req.csrfToken()})
+}
+
+```
+:::tip Observacion 
+el método  csrfToken() lo genera csurf cuando lo configuramos con el middleware.
+:::
+#### De forma global a través de un middleware
+- No se necesita enviarlo en cada ruta como la forma manual.
+```js
+app.use(express.urlencoded({extended:true}));
+app.use(csrf());
+
+// variables globales para las vistas
+// Enviamos una llave a todas las páginas que renderizamos 
+  // res.locals.nombrellave = valor;
+
+app.use((req, res, next) => {
+    res.locals.csrfToken = req.csrfToken();
+    next();
+});
+
+```
+:::tip Observacion 
+- Se envia a todas las vistas a traves del middleware.
+- El token se debe enviar después de configurar el body de un formulario (app.use(express.urlencoded({extended:true}))) ya que se envia por POST
+:::
+
+
+## Variables globales 
+- Sirven para enviar datos a todas las vistas a través de un middleware.
+- Hacemos más variables globales
+authController.js
+```js
+const loginForm = (req,res) => {
+       res.render('login' )
+}
+const registerForm = (req,res) => {
+      res.render('register' )
+}
+
+```
+index.js
+```js
+// variables globales para las vistas
+// Enviamos dos llave a todas las paginas que renderizamos 
+  // res.locals.nombrellave = valor;
+
+app.use((req, res, next) => {
+    res.locals.csrfToken = req.csrfToken();
+    res.locals.mensajes = req.flash("mensajes");
+    next();
+});
+
+```
+##  Cambios en el proyecto
+
+### Verificamos la sesion en las rutas de home
+:::tip observacion
+Podemos poner varios middleware en una ruta
+:::
+```js
+const express = require('express');
+const router = express.Router();
+const {leerUrls , agregarUrl , eliminarUrl , editarUrlForm , editarUrl , redireccionamiento} = require('../controllers/homeController' )
+const urlValida = require('../middlewares/urlValida');
+const verificarUser = require('../middlewares/verificarUser');
+router.get("/" , verificarUser,  leerUrls)
+router.post("/" , verificarUser , urlValida ,  agregarUrl)
+router.get("/eliminar/:id"  , verificarUser , eliminarUrl);
+router.get("/editar/:id", verificarUser ,editarUrlForm);
+router.post("/editar/:id" , verificarUser , urlValida ,  editarUrl)
+router.get("/:url"  , redireccionamiento)
+module.exports = router;
+
+```
+###  Ponemos mensajes flash que se puedan ver en la vista sobre las validaciones de la url
+middlewares/urlValida.js
+```js
+// Modulo que viene incorporado con Node.js
+const { URL } = require("url");
+const urlValidar = (req,res , next) => {
+ // Si todo esta correcto llamamos a next
+ // next = eliminarUrl
+    try {
+        // Leo el body del formulario
+        const { origin } = req.body;
+        // Se crea una nueva instancia de URL con la informacion del formulario
+        const urlFrontend = new URL(origin);
+        //La instancia(objeto) tiene la propiedad origin
+        //Si es distinto a null , tiene el formato de url
+        if (urlFrontend.origin !== "null") {
+            // Comprueba que tenga el protocolo http o https y si lo tiene llama al next()
+            if (
+                urlFrontend.protocol === "http:" ||
+                urlFrontend.protocol === "https:"
+            ) {
+                return next();
+            }
+            throw new Error("Tiene que tener https://");
+        }
+        // Lanzamos un error en caso que no sea valida
+        throw new Error("no válida 😲");
+    } catch (error) {
+        console.log("Invalid URL:"+req.body.origin);
+        if (error.message === "Invalid URL: "+req.body.origin) {
+            req.flash("mensajes", [{ msg: "URL no válida" }]);
+        } else {
+            req.flash("mensajes", [{ msg: error.message }]);
+        }
+       
+        
+    return res.redirect('/')
+    }
+};
+
+module.exports = urlValidar;
+
+```
+## ref mongoDB
+- En mongoDB Podemos hacer una referencia (parecido a una relación)
+models/Url.js
+```js
+
+const mongoose = require('mongoose')
+const {Schema} = mongoose
+const urlSchema = new Schema({
+
+    origin: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    shortURL: {
+        type: String,
+        unique: true,
+        required: true,
+    } ,
+    // Referencia a un usuario 
+    user: {
+        // De tipo ID de un esquema
+         type: Schema.Types.ObjectId,
+         // Nombre del esquema (Referencia del esquema)
+         ref:"User" ,
+         required:true,
+    }
+})
+
+const Url = mongoose.model('Url', urlSchema)
+module.exports = Url;
+
+```
+:::tip Explicacion como si fuera relacional
+- Se hace una referencia a la columna _id(type:Schema.Types.ObjectId) de la tabla User(ref:”User”).
+- _id lo genera mongoDB de manera automática.
+:::
+HomeController.js
+```js
+// Importamos el modelo
+const Url = require('../models/Url');
+const {nanoid} = require('nanoid');
+
+const leerUrls = async(req,res) => {
+   try {
+       // req.user es la informacion del usuario que se encuentra en la sesion
+     // Buscamos todas las url donde user = req.user.id
+      const urls = await Url.find({user:req.user.id}).lean();
+      res.render('home' , {urls:urls })
+   } catch (e) {
+    req.flash("mensajes" , [{msg: error.message}]);
+    return res.redirect('/')
+   }
+
+    }
+const agregarUrl = async(req,res) => {
+    const {origin} = req.body;
+    try {
+        // Generamos una nueva instancia del modelo con la id del usuario
+       const url = new Url({origin:origin , shortURL:nanoid(6) , user: req.user.id})
+       await url.save();
+       req.flash("mensajes" , [{msg:"URL AGREGADA"}])
+       res.redirect('/');
+    } catch(error) {
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/')
+    }
+}
+const eliminarUrl = async(req,res) => {
+    
+    const {id} = req.params;
+    try {
+        // Buscamos la url por la id
+       const url = await Url.findById(id);
+       // Si la url no pertenece al usuario
+       if (!url.user.equals(req.user.id)) {
+         throw new Error("No es tu url ");
+       }
+       // Lo eliminamos  de la BD con el metodo remove() que viene del objeto MongoDB
+       await url.remove();
+       req.flash("mensajes" , [{msg:"URL ELIMINADA"}])
+       res.redirect('/');
+     } catch(error) {
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/')
+     }
+}
+
+const editarUrlForm = async(req,res) => {
+    
+    const {id} = req.params;
+    try {
+      
+       const url = await Url.findById(id).lean()
+       if (!url.user.equals(req.user.id)) {
+        throw new Error("No es tu url ");
+      }
+      
+       res.render('home',{url})
+    } catch(error) {
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/')
+    }
+}
+const editarUrl = async(req,res) => {
+  
+    const {id} = req.params;
+    const {origin} = req.body;
+    try {
+       // Buscamos la url por la id
+       const url = await Url.findById(id);
+       // Si la url no pertenece al usuario
+       if (!url.user.equals(req.user.id)) {
+         throw new Error("No es tu url ");
+       }
+       // Lo actualizamos  en la BD con el metodo updateOne() que viene del objeto MongoDB
+       //recibe un objeto{} con los datos que se van a editar
+       //origin:origin
+       await url.updateOne({origin});
+       req.flash("mensajes" , [{msg:"URL EDITADA"}])
+       res.redirect('/');
+    
+    } catch(error) {
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/')
+    }
+}
+
+const redireccionamiento = async(req,res) => {
+    const {url} = req.params
+    try {
+       // Modificar en la documentacion
+       const urlDB = await Url.findOne({shortURL: url })
+       res.redirect(urlDB.origin);
+    } catch(error) {
+        req.flash("mensajes" , [{msg: "No existe esta url configurada"}]);
+        return res.redirect('/auth/login')
+    }
+}
+   module.exports = {leerUrls , agregarUrl , eliminarUrl , editarUrlForm , editarUrl , redireccionamiento};
+
+```
+## Nodemailer
+- Es un [módulo](https://nodemailer.com/about/) para enviar correos electrónicos
+- Para usarlo ,  se debe configurar un hosting (Gmail, servidor, etc) para   que acepte el envío de información.
+- Para simular un hosting usaremos [mailtrap](https://mailtrap.io) que prueba los correo electronicos y simula que los esta enviando. Tambien nos permite ver los correos enviados.
+### Guia de mailtrap
+1. Nos registramos
+2. En integraciones nos aparece NodeMailer
+3. AL SELECCIONARLO ,NOS APARECE LA CONFIGURACION para crear el transportador
+
+Algo asi:
+```js
+var transport = nodemailer.createTransport({
+  host: "smtp.mailtrap.io",
+  port: 2525,
+  auth: {
+    user: "815fddfe9d615f",
+    pass: "8a37d820c188a6"
+  }
+});
+
+```
+4.  Lo de la autenticación lo vamos a tener que pasar a un archivo .env ya que es información sensible
+### Guia  de NodeMailer
+1. Se importa
+2. Se crea un transportador con las configuraciones del hosting
+3. Se envia el correo
+
+### En el proyecto 
+```powershell
+npm install nodemailer
+```
+AuthController.js
+```js
+const nodemailer = require("nodemailer");
+require('dotenv').config()
+const registerUser = async (req,res) => {
+  
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    req.flash("mensajes" , errors.array());
+    return res.redirect('/auth/register')
+  }
+    const {userName , email , password} = req.body
+    try {
+        
+       let user = await User.findOne({email:email});
+      
+       if (user) throw new Error('ya existe el usuario');
+     
+      user = new User({userName , email , password  , tokenConfirm: nanoid()});
+      user.save()
+      // Creamos el transportador
+      const transporte = nodemailer.createTransport({
+        host: "smtp.mailtrap.io",
+        port: 2525,
+        auth: {
+          user: process.env.userEmail,
+          pass: process.env.userPassword
+        }
+      });
+      // Enviamos el correo 
+      let info = await transporte.sendMail({
+        // Quien lo envia
+        from: '"Fred Foo 👻" <foo@example.com>', 
+        // A quien se envia
+        to: user.email, 
+        // Asunto
+        subject: "Verifica tu cuenta de correo",
+        //texto plano  
+        //text: "Hello world?",
+        //texto en HTML
+        html: `<a href="http://localhost:5000/auth/confirmarCuenta/${user.tokenConfirm}">Verifica tu cuenta aqui</a>`, 
+      });
+      req.flash("mensajes" , [{msg: "Revisa tu correo electronico y valida cuenta"}]);
+      res.redirect('/auth/login');
+    } catch(error) {
+      req.flash("mensajes" , [{msg: error.message}]);
+      return res.redirect('/auth/register')
+    }
+}
+
+```
+:::tip Observacion 
+el require('dotenv').config() se ubica en todos los archivos que utiliza variables de entorno
+:::
+.env
+```js
+URI=mongodb+srv://User_API:contraseña@cluster.xcibc.mongodb.net/dbUrl?retryWrites=true&w=majority
+userEmail=815fddfe9d615f
+userPassword=8a37d820c188a6
+
+```
+## Subir archivos
+- [Pagina para generar imagen aleatoria](https://picsum.photos)
+
+- Las imagenes las guardamos en la carpeta publica (En este ejemplo public/img/perfiles)
+- El modulo [multer](https://www.npmjs.com/package/multer) o el modulo [formidable](https://www.npmjs.com/package/formidable) contiene la logica para manipular las imagenes 
+- En el ejemplo se utiliza formidable
+- También usaremos el módulo [jimp](https://www.npmjs.com/package/jimp)   para editar la imagen (redimensionar , quitar calidad , etc)
+Models/User
+```js
+const UserSchema = new Schema({
+  
+   userName: {
+       type:String,
+       lowercase:true,
+       required:true,
+   } ,
+
+   email: {
+    type:String,
+    lowercase:true,
+    required:true ,
+    unique : true ,
+    // Indexar
+    index: {unique : true} , 
+} ,
+
+password: {
+    type:String ,
+    required : true ,
+
+} ,
+
+tokenConfirm : {
+    type:String ,
+    default:null,
+} ,
+
+cuentaConfirmada: {
+    type:Boolean,
+    default:false
+} , 
+imagen: {
+    type:String ,
+    default: null,
+}
+
+})
+
+```
+views/perfil.hbs
+```hbs
+
+<h1 class="text-center">Nombre del usuario</h1>
+<p class="text-center">Edita aqui tu perfil</p>
+<div class="my-2 text-center">
+    <img src="/img/perfiles/imagen.jpg" alt="" class="rounded-circle">
+</div>
+<form action="/perfil?_csrf={{csrfToken}}" method="post" enctype="multipart/form-data">
+ <input class="form-control mb-2 form-control-sm" type="file" id="formFile" name="myFile" />
+ <button class="btn btn-dark my-3">Cambiar imagen de perfil</button>
+</form>
+
+```
+:::tip Observacion 
+- Usa(atributo-valor)  enctype="multipart/form-data" en el formulario para enviar imágenes.
+- Usar el atributo multiple en el input file si desea subir varios archivos.
+- Para los formularios que contienen imágenes, el token de csurf debe enviarse como query(a través de la url) 
+```html
+action="/perfil?_csrf={{csrfToken}}"
+```
+:::
+Creamos un archivo perfilController.js dentro de la carpeta controllers.
+:::tip 
+Otra forma de exportar
+:::
+```js
+//module.exports.nombrefuncion = funcion
+// se exporta el nombrefuncion 
+module.exports.formPerfil = async(req,res) => {
+   res.render("perfil");
+} 
+module.exports.editarFotoPerfil = async(req,res) => {
+   
+} 
+
+```
+routes/home.js
+```js
+const { formPerfil, editarFotoPerfil } = require('../controllers/perfilController');
+router.get("/perfil" , verificarUser , formPerfil);
+router.post("/perfil" , verificarUser , editarFotoPerfil);
+
+```
+views/components/Navbar.hbs
+- Añadimos la ruta en el menú
+```html
+  <div class="navbar-nav ms-auto">
+        <a class="nav-link active" aria-current="page" href="/">Home</a>
+        <a class="nav-link" href="/auth/register">Register</a>
+        <a class="nav-link" href="/perfil">Perfil</a>
+        <a class="nav-link" href="/auth/login">Login</a>
+        <a class="nav-link" href="/auth/logout">LogOut</a>
+      </div>
+
+```
+
+## Formidable
+```powershell
+npm i formidable
+```
+### Pequeño tutorial
+ 1. Se crea una instancia 
+ ```js
+ const form = formidable({ multiples: true });
+ ```
+ :::tip Observacion 
+- multiples = boolean Sirve para especificar si son varias imágenes
+ :::
+2. Usamos el metodo parse() de la instancia para leer y procesar la imagen 
+- A través de files (parámetro del callback de la función parse()), tenemos toda la información de la imagen (extensión , tamaño ,etc). Toda esa información viene de una propiedad que se llama igual que el valor del atributo name del input file
+
+perfilController.js
+```js
+const formidable = require('formidable');
+//module.exports.nombrefuncion = funcion
+// se exporta el nombrefuncion 
+module.exports.formPerfil = async(req,res) => {
+   res.render("perfil");
+} 
+module.exports.editarFotoPerfil = async(req,res) => {
+   // Instanciamos un objeto formidable
+   const form = new formidable.IncomingForm()
+   // Especificamos el tamaño  maximo del archivo
+   // 50 * 1024 * 1024 = 5MB 
+   form.maxFileSize = 50 * 1024 * 1024
+   //parse(de donde viene la imagen , funcion)
+   form.parse(req , async(err, fields , files) => {
+      try {
+         // Si tiene un error
+      if (err) {
+         throw new Error('No es una imagen');
+      }
+      //Contiene toda la informacion de la imagen
+      // La propiedad myFile se llama igual que el valor del atributo name del input file 
+      // Por lo tanto el nombre de la propiedad cambia , si el valor del atributo name cambia
+      const file = files.myFile;
+      // Validaciones
+      // Comprobar que existe una imagen
+      if(file.originalFilename === "" ) {
+         throw new Error('Por favor agrega una imagen');
+      }
+      // Validamos el formato de la imagen
+     if (!(file.mimetype == "image/jpeg" || file.mimetype == "image/png")) {
+      throw new Error('Por favor agrega una imagen .pjg o .png');
+     }
+      // Validamos el tamaño  (que sea menor a 5mb)
+      console.log(file);
+      if (file.size > 5 * 1024 * 1024) {
+         throw new Error('Menos de 5mb ');
+      }
+      // Sacamos la extension
+      const extension = file.mimetype.split("/")[1];
+      // Donde se va a guardar la imagen 
+      const dirFile = __dirname + "../public/perfiles/"
+       req.flash("mensajes" , [{msg: "Ya se subio la imagen"}]);
+      return res.redirect('/perfil');
+   } catch (error) {
+        
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/perfil')
+   }
+   })
+} 
+
+```
+:::tip __dirname  
+devuelve la Ubicación del archivo
+:::
+## Modulo nativo Path (Join)
+- Tiene el método join que nos permite formar una ruta
+- También nos permite usar los “puntos” para la ubicación de archivos (../.)
+```js
+const path  = require('path');
+ // Donde se va a guardar la imagen 
+// __dirname/../public/perfiles/id.extension
+ const dirFile = path.join(__dirname , `../public/img/perfiles/${req.user.id}.${extension}`);
+
+```
+## file System
+- Ahora vamos a usar el modulo file System para guardar el archivo.
+- Sirve para manipular los archivos
+```js
+const fs = require('fs');
+// Sacamos la extension
+      const extension = file.mimetype.split("/")[1];
+      // Donde se va a guardar la imagen 
+      const dirFile = path.join(__dirname , `../public/img/perfiles/${req.user.id}.${extension}`);
+      // Guardamos la imagen  con el metodo renameSync
+      // renameSync(ruta_vieja , ruta_mueva)
+      // la propiedad filepath contiene la ubicacion del archivo
+       fs.renameSync(file.filepath , dirFile );
+       req.flash("mensajes" , [{msg: "Ya se subio la imagen"}]);
+
+```
+Completo: 
+```js
+const formidable = require('formidable');
+const path  = require('path');
+const fs = require('fs');
+module.exports.formPerfil = async(req,res) => {
+   res.render("perfil");
+} 
+module.exports.editarFotoPerfil = async(req,res) => {
+   // Instanciamos un objeto formidable
+   const form = new formidable.IncomingForm()
+   // Especificamos el tamaño  maximo del archivo
+   // 50 * 1024 * 1024 = 5MB 
+   form.maxFileSize = 50 * 1024 * 1024
+   //parse(de donde viene la imagen , funcion)
+   form.parse(req , async(err, fields , files) => {
+      try {
+         // Si tiene un error
+      if (err) {
+         throw new Error('No es una imagen');
+      }
+      //Contiene toda la informacion de la imagen
+      // La propiedad myFile se llama igual que el valor del atributo name del input file 
+      // Por lo tanto el nombre de la propiedad cambia , si el valor del atributo name cambia
+      const file = files.myFile;
+      // Validaciones
+      // Comprobar que existe una imagen
+      if(file.originalFilename === "" ) {
+         throw new Error('Por favor agrega una imagen');
+      }
+      // Validamos el formato de la imagen
+     if (!(file.mimetype == "image/jpeg" || file.mimetype == "image/png")) {
+      throw new Error('Por favor agrega una imagen .pjg o .png');
+     }
+      // Validamos el tamaño  (que sea menor a 5mb)
+      console.log(file);
+      if (file.size > 5 * 1024 * 1024) {
+         throw new Error('Menos de 5mb ');
+      }
+      // Sacamos la extension
+      const extension = file.mimetype.split("/")[1];
+      // Donde se va a guardar la imagen 
+      const dirFile = path.join(__dirname , `../public/img/perfiles/${req.user.id}.${extension}`);
+      // Guardamos la imagen  con el metodo renameSync
+      // renameSync(ruta_vieja , ruta_mueva)
+      // la propiedad filepath contiene la ubicacion del archivo
+       fs.renameSync(file.filepath , dirFile );
+       req.flash("mensajes" , [{msg: "Ya se subio la imagen"}]);
+      return res.redirect('/perfil');
+   } catch (error) {
+        
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/perfil')
+   }
+   })
+} 
+
+```
+ ### A guardar en la BD la url de la imagen
+
+ :::tip 
+el método save() viene de un objeto mongoDB que nos permite guardar en la BD el objeto.
+ :::
+```js
+const formidable = require('formidable');
+const path  = require('path');
+const fs = require('fs');
+const User = require('../models/User');
+module.exports.formPerfil = async(req,res) => {
+   res.render("perfil");
+} 
+module.exports.editarFotoPerfil = async(req,res) => {
+   // Instanciamos un objeto formidable
+   const form = new formidable.IncomingForm()
+   // Especificamos el tamaño  maximo del archivo
+   // 50 * 1024 * 1024 = 5MB 
+   form.maxFileSize = 50 * 1024 * 1024
+   //parse(de donde viene la imagen , funcion)
+   form.parse(req , async(err, fields , files) => {
+      try {
+         // Si tiene un error
+      if (err) {
+         throw new Error('No es una imagen');
+      }
+      //Contiene toda la informacion de la imagen
+      // La propiedad myFile se llama igual que el valor del atributo name del input file 
+      // Por lo tanto el nombre de la propiedad cambia , si el valor del atributo name cambia
+      const file = files.myFile;
+      // Validaciones
+      // Comprobar que existe una imagen
+      if(file.originalFilename === "" ) {
+         throw new Error('Por favor agrega una imagen');
+      }
+      // Validamos el formato de la imagen
+     if (!(file.mimetype == "image/jpeg" || file.mimetype == "image/png")) {
+      throw new Error('Por favor agrega una imagen .pjg o .png');
+     }
+      // Validamos el tamaño  (que sea menor a 5mb)
+      console.log(file);
+      if (file.size > 5 * 1024 * 1024) {
+         throw new Error('Menos de 5mb ');
+      }
+      // Sacamos la extension
+      const extension = file.mimetype.split("/")[1];
+      // Donde se va a guardar la imagen 
+      const dirFile = path.join(__dirname , `../public/img/perfiles/${req.user.id}.${extension}`);
+      // Guardamos la imagen  con el metodo renameSync
+      // renameSync(ruta_vieja , ruta_mueva)
+      // la propiedad filepath contiene la ubicacion del archivo
+       fs.renameSync(file.filepath , dirFile );
+       // La guardamos en la BD
+       const user = await User.findById(req.user.id);
+       user.imagen = `${req.user.id}.${extension}`;
+       await user.save();
+       req.flash("mensajes" , [{msg: "Ya se subio la imagen"}]);
+      return res.redirect('/perfil');
+   } catch (error) {
+        
+        req.flash("mensajes" , [{msg: error.message}]);
+        return res.redirect('/perfil')
+   }
+   })
+} 
+
+```
+ ## jimp
+ - Usamos el modulo jimp para modificar la imagen
+ ```powershell
+ npm i jimp
+ ```
+ Despues de guardar la imagen:
+ ```js
+ fs.renameSync(file.filepath , dirFile );
+       // Leemos la imagen (creamos una  instancia)
+      const image =  await Jimp.read(dirFile);
+      // Cambiamos el tamaño  (resize)
+      // Cambiamos la calidad (quality)
+      // Lo volvemos a guardar (writeAsync)
+       image.resize(200,200).quality(90).writeAsync(dirFile);
+       const user = await User.findById(req.user.id);
+
+ ```
+ ### Lo mostramos en la ruta:
+ perfileController.js
+ ```js
+ module.exports.formPerfil = async(req,res) => {
+   
+   try {
+         const user = await User.findById(req.user.id);
+         res.render("perfil" , {user: req.user , imagen: user.imagen});
+   } catch(error) {
+      req.flash("mensajes" , [{msg: "Error al leer el usuario"}]);
+      return res.redirect('/perfil')
+   }
+} 
+
+ ```
+ views/perfi.hbs
+ ```js
+ <h1 class="text-center">{{user.userName}}</h1>
+<p class="text-center">Edita aqui tu perfil</p>
+<div class="my-2 text-center">
+    {{#if imagen}}
+         <img src="/img/perfiles/{{imagen}}" alt="" class="rounded-circle">
+         {{else}} 
+              <img src="/img/perfiles/imagen.jpg" alt="" class="rounded-circle">
+    {{/if}}
+   
+</div>
+<form action="/perfil?_csrf={{csrfToken}}" method="post" enctype="multipart/form-data">
+ <input class="form-control mb-2 form-control-sm" type="file" id="formFile" name="myFile" />
+ <button class="btn btn-dark my-3">Cambiar imagen de perfil</button>
+</form>
+
+ ```
+ ## connet-mongo
+- Las sesiones trabajan en memoria local (en el servidor/PC)
+- Express recomienda que en producción (deploy) no trabajemos con la sesion en memoria.
+- Usaremos el modulo connect-mongo para respaldar la sesion en la BD.
+```powershell
+npm i connect-mongo
+```
+database/conexion.js
+```js
+const mongoose = require('mongoose');
+// Habilitamos las variables de entorno
+require('dotenv').config()
+
+const clientDB = mongoose.connect(process.env.URI).then((m)=> {
+
+    console.log("db conectada 🔥");
+    // Devolvemos el cliente por el cual nos conectamos a la BD
+    return m.connection.getClient();
+}).catch(e => console.log("Fallo la conexion" + e));
+
+module.exports = clientDB;
+
+```
+index.js
+```js
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+const clientDB = require('./database/conexion');
+const csrf = require("csurf");
+
+
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+
+```
+:::tip Observacion
+- Toda la ejecución de un código (conexión a la BD y retornar algo) se fue a una constante.
+- Al usar el require() se ejecuta el codigo y lo que se devuelve lo contiene la variable clientDB.
+:::
+### Configuramos las sesiones para que se respalden en la BD.
+index.js
+```js
+
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+const clientDB = require('./database/conexion');
+const csrf = require("csurf");
+
+
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+app.use(
+  session({
+      secret: 'palabra secreta',
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto" ,
+      // create({configuraciones})
+      store : MongoStore.create({
+        // Conexion a la BD
+           clientPromise: clientDB ,
+        // Nombre de la BD
+        dbName :  'dbUrl'
+      }),
+  })
+);  
+
+```
+## Saniteze mongo
+- Es un middleware para evitar inyecciones(ataques) en la BD.
+- Existen dos modulos con la misma funcion :  [mongo-sanitize](https://www.npmjs.com/package/mongo-sanitize) o [express-mongo-sanitize](https://www.npmjs.com/package/express-mongo-sanitize)
+- Utilizaremos el segundo
+```powershell
+npm i express-mongo-sanitize
+```
+index.js
+```js
+const session = require("express-session");
+const mongoSanitize = require('express-mongo-sanitize');
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+const clientDB = require('./database/conexion');
+const csrf = require("csurf");
+
+
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+app.use(
+  session({
+      secret: 'palabra secreta',
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto" ,
+   
+      store : MongoStore.create({
+           clientPromise: clientDB ,
+        dbName :  'dbUrl'
+      }),
+  })
+);  
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.serializeUser((user , done) => {
+   return done(null , {id: user._id , userName: user.userName})
+})
+passport.deserializeUser(async (user , done) => {
+ const userDB = await User.findById(user.id);
+  return  done(null , {id:userDB._id , userName: userDB.userName})
+})
+
+app.use(express.urlencoded({extended:true}));
+app.use(csrf());
+
+// Utilizamos el middleware
+app.use(mongoSanitize());
+
+app.use((req, res, next) => {
+    res.locals.csrfToken = req.csrfToken();
+    res.locals.mensajes = req.flash("mensajes");
+    next();
+});
+
+```
+## CORS
+- modulo [cors]( https://expressjs.com/en/resources/middleware/cors.html)
+- Sirve para especificar que dominios van a consumir esta aplicación/sitio web / etc.
+```powershell
+npm install cors
+```
+.env
+```js
+URI=mongodb+srv://User_API:contraseña@cluster.xcibc.mongodb.net/dbUrl?retryWrites=true&w=majority
+userEmail=815fddfe9d615f
+userPassword=8a37d820c188a6
+PATHOSTING=
+
+```
+:::tip Observacion
+Podemos crear variables de entornos vacia (PATHOSTING)
+:::
+index.js
+```js
+const session = require("express-session");
+const mongoSanitize = require('express-mongo-sanitize');
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const express = require("express");
+const { create } = require("express-handlebars");
+const passport = require("passport");
+const User = require("./models/User");
+require('dotenv').config()
+const clientDB = require('./database/conexion');
+const csrf = require("csurf");
+const cors = require("cors");
+
+
+const hbs = create({
+    extname: ".hbs",
+    partialsDir: ["views/components"],
+});
+const app = express();
+// Configuramos el cors
+const corsOptions = {
+  credentials: true,
+  // Que persona(servicios) van a consumir esta app
+  // "*" = Todas las personas
+  // Si NO existe la variable de entorno , todas las persona pueden consumir esta app
+  origin: process.env.PATHOSTING || "*",
+  // Los metodos HTTP que utilizamos 
+  methods: ['GET' , 'POST']
+};
+// Usamos el cors con la configuracion que especificamos
+app.use(cors(corsOptions));
+app.use(
+  session({
+      secret: process.env.SECRETSESSION,
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto" ,
+
+      store : MongoStore.create({
+ 
+           clientPromise: clientDB ,
+ 
+        dbName :  process.env.DBNAME
+      }),
+  })
+);  
+app.use(flash());
+
+```
+:::tip Observacion
+- Un formulario HTML solo envia GET Y POST
+- Con fetch y Axios (JS ) podemos establecer métodos PUT , DELETE , ETC.
+:::
+## Modificaciones para el deploy
+.env
+```js
+URI=mongodb+srv://User_API:contraseña@cluster.xcibc.mongodb.net/dbUrl?retryWrites=true&w=majority
+userEmail=815fddfe9d615f
+userPassword=8a37d820c188a6
+PATHOSTING=
+SECRETSESSION=815fddfe9d615f
+
+```
+index.js
+```js
+app.use(
+  session({
+      secret: process.env.SECRETSESSION,
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto" ,
+
+      store : MongoStore.create({
+ 
+           clientPromise: clientDB ,
+ 
+        dbName :  'dbUrl'
+      }),
+  })
+);  
+
+```
+authController.js
+```js
+// Enviamos el correo 
+      let info = await transporte.sendMail({
+        // Quien lo envia
+        from: '"Fred Foo 👻" <foo@example.com>', 
+        // A quien se envia
+        to: user.email, 
+        // Asunto
+        subject: "Verifica tu cuenta de correo",
+        //texto plano  
+        //text: "Hello world?",
+        //texto en HTML
+        html: `<a href="${ process.env.PATHOSTING || "http://localhost:5000"}/auth/confirmarCuenta/${user.tokenConfirm}">Verifica tu cuenta aqui</a>`, 
+      });
+
+```
+public/js/app.js
+```js
+document.addEventListener('click' , e => {
+    
+    if (e.target.dataset.short) {
+        // El window es global , se puede omitir
+         const url = `${window.location.origin}/${e.target.dataset.short}`;
+
+```
+package.json
+```json
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+
+```
+:::tip Observacion
+Script start = Es el que ejecuta heroku
+:::
+## Cookies segura
+ - Le da seguridad al servidor
+ ### Pasos
+ 1. Borramos las sesiones en la BD
+ 2. Modificamos el index.js
+ ```js
+app.use(cors(corsOptions));
+// Para que el secure : true funcione
+app.set("trust proxy", 1);
+app.use(
+  session({
+      secret: process.env.SECRETSESSION,
+      resave: false,
+      saveUninitialized: false,
+      name: "nombre de secreto" ,
+
+      store : MongoStore.create({
+ 
+           clientPromise: clientDB ,
+ 
+        dbName :  process.env.DBNAME
+      }), 
+      // Habilitamos las cookies seguras
+      // secure : true es para https
+      // secure : false es para http
+      // Si esta en produccion , habilitamos las cookies seguras
+      cookie: { secure: process.env.MODO === 'production' ? true : false, maxAge: 30 * 24 * 60 * 60 * 1000 },
+  })
+);  
+
+ ```
+ :::tip Observacion
+ Especifica cuanto va a durar la sesion. En este ejemplo son 30 dias.
+ :::
+ .env
+ ```js
+ URI=mongodb+srv://User_API:contraseña@cluster.xcibc.mongodb.net/dbUrl?retryWrites=true&w=majority
+userEmail=815fddfe9d615f
+userPassword=8a37d820c188a6
+PATHOSTING=
+SECRETSESSION=815fddfe9d615f
+DBNAME=dbUrl
+MODO=production
+ ```
+ ## Heroku
+ - [Heroku](https://www.heroku.com/pricing)
+  ### En el sitio 
+ 1. Te creas una cuenta
+ 2. Creas tu primera App  (Deja todo por defecto)
+ 3. En la parte de deploy nos muestra varias formas de desplegar la aplicación. Podes elegir heroku git (tenes que instalar heroku CLI)  o github. Depende de la opcion , los siguientes pasos cambian(En este ejemplo se usara github)
+ 
+ ### En el proyecto
+ - Hacemos todo el procedimiento para ponerlo en un repositorio de github
+ 
+ .gitignore
+ ```gitignore
+ .env
+node_modules
+
+ ```
+ :::tip Observacion
+ Heroku Lee el package.json  y las instala
+ :::
+
+### En el sitio
+4. Le damos a GitHub
+5. Connect To GitHub y lo autorizas.
+6. Buscamos el repositorio y nos conectamos
+7. Seleccionamos la rama que se va a hacer el deplo Y Le das a Deploy Branch
+8. Configuramos las variables de entorno (en el apartado de setting - config Var)
+- En ese apartado ponemos las variables de entorno.
+- Key (Nombre) -> Valor
+- Por cada actualizacion en el repositorio , hacemos el el deploy branch (a menos que lo configures en automatico)
+
+
+
 ## Consejos
 - ¡Si esta undefined es porque no estas esperando el resultado de la base de dato! USA EL AWAIT
 - En todas las operaciones con una BD usar el await

@@ -558,7 +558,6 @@ public abstract class Dispositivo {
 - Los métodos deben ser genéricos permitiendo hacer uso de su funcionalidad, NO hardcodeados.
 - Usar ID
 - Al cargar  una BD, devolver la instancia de un arraylist 
-- Arrancar el get con 2  a menos que empieze con la id BD
 - al instanciar desde una BD , el constructor debe contener la id.
 - ArrayList add / remove / get
 - 3 Constructores -- BD
