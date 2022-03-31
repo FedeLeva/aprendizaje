@@ -405,7 +405,8 @@ export default App
 
 :::tip Explicacion 
 - onClick es un tipo de evento
-- Sintaxis : tipo de Evento = {función}
+- Sintaxis : tipo de Evento = {función} 
+- Sintaxis :  onTipoEvento = función
 - La función se ejecutará cada vez que se active el evento.
 - La función va sin paréntesis.
 :::
