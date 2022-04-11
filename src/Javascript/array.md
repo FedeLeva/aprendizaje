@@ -483,6 +483,55 @@ const array3 = [...array2 , 'Al reves' , ...array1];
 console.log(array3);
 
 ```
+### Algunas de sus funciones:
+#### Crean una copia de un array/objeto
+```js
+const gato = {propiedades del gato}
+// Creamos una copia de gato
+const gato2 = {…gato};
+```
+:::tip Observacion 
+- Al gato2 se le asigna una copia de gato por lo tanto también tiene todas sus propiedades.
+- gato y gato2 tienen las mismas propiedades y valores, pero son totalmente independiente(es una copia)
+- Conclusion : Sirven para crear una copia de forma independiente.
+:::
+:::warning 
+La copia se hace solo de los elementos superiores (se accede a la propiedad con un punto(objeto.propiedad)), los elementos de “nivel bajo” (se accede a la propiedad con más de un punto  (objeto.propiedad.propiedad) se pasan por referencia.  
+
+CUIDADO CON OBJETOS/ARRAY COMPLEJOS
+:::
+#### Descomponen un objeto/array
+```js
+const sumar = (a,b) => a+b;
+const numeros = [2,3];
+const suma = sumar (…numeros)
+
+```
+:::tip Observacion 
+En el ejemplo se ejecuta la función sumar donde a = 2 y b = 3
+:::
+#### Sirve para unir Array/Objetos
+#### Sirve para añadir elementos a un array o añadir propiedades a un objeto
+#### Sirve para guardar un pedazo de un array o objeto
+```js
+const masNumeros = [1,2,3,4,5]
+const [primero , …resto] = masNumeros
+//Resultado
+//primero = 1
+//resto = [2,3,4,5]
+
+```
+:::tip 
+Funciona de igual manera con array y objetos
+:::
+## REST OPERATOR
+- Es un parámetro (…parámetro) de una funcion
+- Te convierte todos los valores de la lista(spread) que se pasa como argumento en un array.
+- Es lo contrario a SPREAD.
+
+```js
+function suma(…números) {}
+```
 
 ## reduce()
 El método reduce () ejecuta una función reductora sobre cada elemento de un array, devolviendo como resultado un único valor.
