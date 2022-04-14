@@ -268,6 +268,8 @@ El parámetro del callback va a representa el valor que contenga cada elemento d
 
 La función callback siempre debe retornar algo.
 
+el filter debe devolver true (si pasa el filtro) o false (si no pasa)
+
 Puede devolver todos los elementos del array o algunos.
 
 Ejemplo:
