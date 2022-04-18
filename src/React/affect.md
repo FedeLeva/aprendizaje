@@ -438,6 +438,9 @@ export default Blog
 
 ```
 src/components/Post.jsx
+:::tip 
+En realidad es una ruta pero por error lo pusimos en components y no en routes
+:::
 :::tip
 Por cada ruta (estática o dinámica), se debe crear una vista/componente
 :::
