@@ -2494,3 +2494,1015 @@ const LayoutContainerForm = () => {
 export default LayoutContainerForm
 
 ```
+## Navbar.jsx 
+- [navbar](https://flowbite.com/docs/components/navbar/)
+:::tip 
+Control + D = Siguiente ocurrencia.
+:::
+```js
+import { useContext } from "react"
+import { Link, NavLink } from "react-router-dom"
+import { UserContext } from "../context/userProvider"
+
+const Navbar = () => {
+    // Obtenemos el valor de la props value del Provider del context
+    // useContext(context)
+    const { user, signOutUser } = useContext(UserContext);
+    const handleClickLogOut = async () => {
+        try {
+            await signOutUser();
+        } catch (error) {
+            console.log(error.code);
+        }
+    }
+    const classButtonBlue = "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-3  dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800";
+    const classButtonRed = "text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-3  dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800";
+    return (
+        <>
+            <nav className="bg-white border-gray-200 px-2 sm:px-4 py-2.5 rounded dark:bg-gray-800">
+                <div className="container flex flex-wrap justify-between items-center mx-auto">
+                    <Link to="/" className="flex items-center">
+                        <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">URLShort App</span>
+                    </Link>
+
+                    <div className="flex md:order-2">
+                        {
+                            user ? (<>
+                                <NavLink to="/home" className={classButtonBlue}>Inicio </NavLink>
+                                <button onClick={handleClickLogOut} className={classButtonRed}>Logout</button>
+                            </>
+                            ) : (<>
+                                <NavLink to="/login" className={classButtonBlue}>Login </NavLink>
+                                <NavLink to="/register" className={classButtonBlue}>Register </NavLink>
+                            </>)
+                        }
+
+                    </div>
+                </div>
+
+
+
+            </nav>
+        </>
+    )
+}
+
+export default Navbar
+
+```
+
+## Ruta protegida #2
+- Vamos a hacerlo de la misma manera que el Layout (Outlet)
+
+routes/Perfil.jsx
+```js
+
+const Perfil = () => {
+  return (
+    <div>Perfil</div>
+  )
+}
+
+export default Perfil
+
+```
+### Creamos la carpeta layouts en components
+- RequireAuth lo movemos a components/layouts/ y le cambiamos el nombre a LayoutRequireAuth
+- El LayoutContainerForm deberia estar en esta carpeta también.
+
+components/layouts/LayoutRequireAuth.jsx
+
+```js
+import React, { useContext } from 'react'
+import { Navigate, Outlet } from 'react-router-dom';
+import { UserContext } from '../../context/userProvider'
+
+const LayoutRequireAuth = () => {
+    const {user} = useContext(UserContext);
+    // Si no existe el usuario
+    if (!user) {
+        // Redirrecionamos  al login
+      return  <Navigate to="/login" />
+    }
+ // Entramos a la ruta protegida
+  return   (
+    <div className="container mx-auto">
+     <Outlet/>
+    </div>
+  )  
+}
+
+export default LayoutRequireAuth
+
+```
+App.jsx 
+```js
+import { useContext } from "react"
+import { Route, Routes } from "react-router-dom"
+import LayoutContainerForm from "./components/LayoutContainerForm"
+import LayoutRequireAuth from "./components/layouts/LayoutRequireAuth"
+import Navbar from "./components/Navbar"
+import { UserContext } from "./context/userProvider"
+import Home from "./routes/Home"
+import Login from "./routes/Login"
+import Perfil from "./routes/Perfil"
+import Register from "./routes/Register"
+
+function App() {
+
+  const { user } = useContext(UserContext);
+
+  if (user == false) {
+    return <p>Loading....</p>
+  }
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<LayoutRequireAuth/>}>
+          {/* Rutas protegidas */}
+          <Route  path="/home" element={<Home />}></Route>
+          <Route path="/perfil" element={<Perfil />}></Route>
+        </Route>
+        <Route path="/" element={<LayoutContainerForm />}>
+          <Route path='/register' element={<Register />}></Route>
+          <Route path='/login' element={<Login />}></Route>
+        </Route>
+      </Routes >
+
+    </>
+  )
+}
+
+export default App
+
+```
+## Ruta 404
+routes/NotFound.jsx
+```js
+import Title from "../components/Title"
+
+const NotFound = () => {
+  return (
+
+    <>
+     <Title text="404"/>
+    </>
+  )
+}
+
+export default NotFound
+
+```
+App.jsx
+```js
+ <Routes>
+        <Route path="/" element={<LayoutRequireAuth />}>
+          <Route path="/home" element={<Home />}></Route>
+          <Route path="/perfil" element={<Perfil />}></Route>
+        </Route>
+        <Route path="/" element={<LayoutContainerForm />}>
+          <Route path='/register' element={<Register />}></Route>
+          <Route path='/login' element={<Login />}></Route>
+        </Route>
+        {/* Ruta 404
+        Cualquier ruta  que no coincida con las anteriores */}
+        <Route path="*" element={<NotFound/>} />
+      </Routes >
+
+```
+## Button loading
+
+components/ButtonLoading.jsx
+
+```js
+const ButtonLoading = () => {
+    return (
+        <button
+            disabled
+            type="button"
+            className="py-2.5 px-5 mr-2 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 inline-flex items-center"
+        >
+            <svg
+                role="status"
+                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                />
+                <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="#1C64F2"
+                />
+            </svg>
+            Loading...
+        </button>
+    );
+};
+
+export default ButtonLoading;
+
+```
+Login.jsx
+
+```js
+const [loading , setLoading] = useState(false);
+```
+```js
+ //  data = un objeto con los input registrados
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      //Iniciamos sesion
+      await loginUser(data.email, data.password);
+      //Redirreciono al home
+      navegate("/home")
+    } catch (e) {
+      const {code , message} = erroresFirebase(e.code);
+      setError(code , {message})
+    } finally {
+      setLoading(false);
+    }
+  }
+
+```
+
+```js
+ { 
+          loading ? <ButtonLoading/> :   <Button text="Login"/>
+        }
+      
+      </form>
+
+```
+
+Register.jsx
+```js
+ const [loading , setLoading] = useState(false);
+```
+```js
+  //  data = un objeto con los input registrados
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      //Creamos un usuario
+      await registerUser(data.email, data.password);
+      //Redirreciono al home
+      navegate("/home")
+    } catch (e) {
+      const {code , message} = erroresFirebase(e.code);
+      setError(code , {message})
+    } finally {
+      setLoading(false);
+    }
+  }
+
+```
+
+```js
+ {  loading ? <ButtonLoading/> :  <Button text="Register"/> }
+       
+      </form>
+
+```
+## Firestore BD
+
+- Firebase tiene dos BD.
+- RealTime se invento primero y luego surgio FireStore 
+- Ambas trabajan en tiempo real.
+
+### RealTime
+- Es  parecido a Json 
+-  Podemos trabajar a través de una REST API en un futuro 
+### Firestore
+- Trabaja a través de documento
+
+##  Sitio de Firebase
+
+1. FireStore Database – Create database – en test mode (dura 30 dias) – habilitar
+2. Inicia una colección
+:::tip Explicacion como si fuera relacional 
+- Una colección es igual a una tabla.
+- Collection ID = nombre de la tabla
+:::
+3. Agregamos un documento en la colección.
+:::tip Explicacion como si fuera relacional 
+- Un documento es igual a una fila de la tabla.
+- Podes generar una ID aleatoria en Document ID
+- Los campos(fields) de un documento serian las columnas de una fila
+- A diferencia de una BD relacional, dos filas pueden tener diferentes campos(columnas) de datos (en una fila el campo es name y en otra el campo es nombre)
+- Cada campo(columna) contiene un nombre, el tipo de dato y el valor.
+:::
+Ejemplo(campo "valor"):
+
+nanoid "xM6S6Z"
+
+origin "https://firebase.google.com/docs/firestore/quickstart?hl=es#initialize"
+
+uid ""
+
+Guardar
+
+:::tip proyecto de crear un short de una url
+- El Document ID es igual al nanoid
+- nanoid: Es el id del documento y el short de la url
+- origin : La url a la que va a redirrecionar el short. El short apunta a esta url.
+- uid : La ID del usuario que creo el short
+:::
+
+### En el proyecto
+- [link](https://firebase.google.com/docs/firestore/quickstart?hl=es)
+1.	Instalar firebase(ya lo hicimos)
+2. Importamos Firestore y lo configuramos en firebase.js
+
+```js
+
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyA4c9Yfhz-IIA5HwtLMHrOTGECM8pXVNt8",
+  authDomain: "react-2022-6867d.firebaseapp.com",
+  projectId: "react-2022-6867d",
+  storageBucket: "react-2022-6867d.appspot.com",
+  messagingSenderId: "996540076090",
+  appId: "1:996540076090:web:5946f2c6470b84e6952503"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+// getFirestore(appFirebase)
+const db = getFirestore(app);
+export {auth , db}
+
+```
+## getDocs 
+- getDocs es un método para leer todos los documentos de una colección.
+- Para manipular los documentos creamos un hook.
+- [link](https://firebase.google.com/docs/firestore/quickstart?hl=es#read_data)
+
+hooks/useFirestore.js
+
+- El hook sirve para reutilizar lógica.
+- Utilizamos la constante db para especificar en que proyecto debe usar la BD. (LO MISMO QUE AUTH)
+
+
+```js
+import { collection, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react"
+import { db } from "../firebase";
+
+export const useFirestore = () => {
+  const [data, setData] = useState([]);
+  const [error, setError] = useState();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+       getData();
+  } , [])
+
+  const getData = async () => {
+    try {
+      setLoading(true);
+      //  getDocs(metodo collection)
+      //  collection(db , "nombre_collecion")
+      // db = configuracion de la bd   de firebase.js
+      const query = await getDocs(collection(db, "urls"));
+      // A la propiedad docs le podemos añadir el metodo map() del array
+     const dataDB =  query.docs.map(doc => (
+        // doc tiene la propiedad id (devuelve la id) y el metodo data (devuelve la informacion)
+        doc.data()
+      ))
+      setData(dataDB);
+    } catch (error) {
+      console.log(error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return {
+       data , error , loading
+  }
+}
+
+```
+Home.jsx
+```js
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+
+const Home = () => {
+  const {data , error , loading} = useFirestore()
+  if (loading) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+  console.log(data)
+  return (
+    <>
+    <Title text="Home"/>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
+
+## Where
+:::warning
+Las reglas de seguridad de firebase no son filtros , el where lo añadis vos.
+:::
+
+useFirestore.js
+```js
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react"
+import { db } from "../firebase";
+
+export const useFirestore = () => {
+  const [data, setData] = useState([]);
+  const [error, setError] = useState();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+       getData();
+  } , [])
+
+  const getData = async () => {
+    try {
+      setLoading(true);
+      // Creamos una referencia con el metodo collection
+      const dataRef = collection(db, "urls");
+      // query(referencia , metodo where )
+      //where(campo a filtrar , "==" , valor);
+      // where campo_a_filtro == valor
+      const q = query(dataRef , where("uid" , "==" , "EV8w1BcEXiTkoyXqlrwF2jBdy4u2"))
+      // Ejecutamos la consulta con el where
+      const querySnapshot = await getDocs(q);
+     const dataDB =  querySnapshot.docs.map(doc => (
+        doc.data()
+      ))
+      setData(dataDB);
+    } catch (error) {
+      console.log(error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return {
+       data , error , loading
+  }
+}
+
+```
+
+### Informacion del usuario activo 
+- Se encuentra en el auth.currentUser.
+```js
+import { auth } from "../firebase"
+  console.log(auth.currentUser);
+
+```
+### Para hacer el filtro dinámicamente 
+
+Entonces cambiamos una parte del código de useFirestore.js
+
+```js
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react"
+import { auth, db } from "../firebase";
+
+export const useFirestore = () => {
+  const [data, setData] = useState([]);
+  const [error, setError] = useState();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+
+       getData();
+  } , [])
+
+  const getData = async () => {
+    try {
+      setLoading(true);
+      // Creamos una referencia con el metodo collection
+      const dataRef = collection(db, "urls");
+      // query(referencia , metodo where )
+      //where(campo a filtrar , "==" , valor);
+      // where campo_a_filtro == valor
+      const q = query(dataRef , where("uid" , "==" , auth.currentUser.uid))
+
+```
+
+## Add Doc
+
+- [link](https://firebase.google.com/docs/firestore/manage-data/add-data?hl=es#add_a_document)
+- [ modulo para generar la id](https://www.npmjs.com/package/nanoid )
+- Podes Agregar un documento con los métodos set y add
+   - método set: Añade un documento, especificando la id (no se genera de forma automática) y los datos correspondientes 
+   - método add: Añade un documento y la id se genera automáticamente
+
+
+   useFirestore.js
+
+```powershell
+npm i nanoid
+```
+
+```js
+import { collection, getDocs, query, where , doc, setDoc } from "firebase/firestore";
+```
+```js
+  const addData = async(url) => {
+     try{
+      setLoading(true);
+    
+      // Creamos un objeto con los datos que se van a guardar
+      const newDoc = {
+          enabled:true ,
+           nanoid:  nanoid(6),
+           origin:url,
+           uid:auth.currentUser.uid
+
+      }
+      // Creamos la referencia
+      // doc(db , collecion , id del documento a crear)
+      const docRef = doc(db , 'urls' , newDoc.nanoid);
+      // Creamos el documento
+      //setDoc(referencia , datos del documento)
+      await setDoc(docRef , newDoc);
+      setData([...data, newDoc ])
+     }catch(error){
+      setError(error.message);
+     } finally {
+      setLoading(false);
+     }
+   }
+  return {
+       data , error , loading , getData , addData
+  }
+
+```
+
+Home.jsx 
+```js
+import { useEffect, useState } from "react"
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+
+const Home = () => {
+  const {data , error , loading , getData , addData} = useFirestore()
+  const [text , setText] = useState('');
+  useEffect(() => {
+   
+    getData();
+  } , [])
+  if (loading) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+  const handleSubmit =async(e)  => {
+    e.preventDefault();
+    await addData(text)
+    setText('');
+  }
+  return (
+    <>
+    <Title text="Home"/>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="ex: http://youtube.com" 
+        onChange={e => setText(e.target.value)}
+        value={text}
+        />
+          <button type="submit">ADD URL</button>
+    </form>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
+## Loading (Parametro set de useState)
+
+useFirestore.js
+```js
+import { collection, getDocs, query, where, doc, setDoc } from "firebase/firestore";
+import { nanoid } from "nanoid";
+import { useState } from "react"
+import { auth, db } from "../firebase";
+
+export const useFirestore = () => {
+  const [data, setData] = useState([]);
+  const [error, setError] = useState();
+  const [loading, setLoading] = useState({});
+
+
+
+  const getData = async () => {
+    try {
+      //usamos un callback en el setLoading cuyo parametro es el valor "actual" (antes de modificarse) del estado
+      setLoading(valorAnterior => ({ ...valorAnterior, getData: true }))
+
+      const dataRef = collection(db, "urls");
+
+      const q = query(dataRef, where("uid", "==", auth.currentUser.uid))
+      const querySnapshot = await getDocs(q);
+      const dataDB = querySnapshot.docs.map(doc => (
+        doc.data()
+      ))
+      setData(dataDB);
+    } catch (error) {
+      console.log(error);
+      setError(error.message);
+    } finally {
+       //usamos un callback en el setLoading cuyo parametro es el valor "actual" (antes de modificarse) del estado
+       setLoading(valorAnterior => ({ ...valorAnterior, getData: false }))
+    }
+  }
+  const addData = async (url) => {
+    try {
+      //usamos un callback en el setLoading cuyo parametro es el valor "actual" (antes de modificarse) del estado
+      setLoading(valorAnterior => ({ ...valorAnterior, addData: true }))
+
+      const newDoc = {
+        enabled: true,
+        nanoid: nanoid(6),
+        origin: url,
+        uid: auth.currentUser.uid
+
+      }
+
+      const docRef = doc(db, 'urls', newDoc.nanoid);
+      await setDoc(docRef, newDoc);
+      setData([...data, newDoc])
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      //usamos un callback en el setLoading cuyo parametro es el valor "actual" (antes de modificarse) del estado
+      setLoading(valorAnterior => ({ ...valorAnterior, addData: false }))
+    }
+  }
+  return {
+    data, error, loading, getData, addData
+  }
+}
+
+```
+Button.jsx
+:::tip 
+Control + D = Siguiente ocurrencia
+:::
+
+```js
+import ButtonLoading from './ButtonLoading';
+
+const Button = ({ text, color = 'purple'  , loading}) => {
+    if (loading) return <ButtonLoading/>
+    return (
+        <button
+            type="submit"
+            className={`focus:outline-none text-white bg-${color}-700 hover:bg-${color}-800 focus:ring-4 focus:ring-${color}-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-${color}-600 dark:hover:bg-${color}-700 dark:focus:ring-${color}-900 ml-5`}
+        >
+            {text}
+        </button>
+    )
+}
+
+export default Button
+
+```
+
+Home.jsx 
+```js
+import { useEffect, useState } from "react"
+import Button from "../components/Button"
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+
+const Home = () => {
+  const {data , error , loading , getData , addData} = useFirestore()
+  const [text , setText] = useState('');
+  useEffect(() => {
+   
+    getData();
+  } , [])
+  if (loading.getData) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+  const handleSubmit =async(e)  => {
+    e.preventDefault();
+    await addData(text)
+    setText('');
+  }
+  return (
+    <>
+    <Title text="Home"/>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="ex: http://youtube.com" 
+        onChange={e => setText(e.target.value)}
+        value={text}
+        />
+          <Button text="ADD URL"  color="blue" loading={loading.addData} />
+    </form>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
+
+Login.jsx 
+```js
+ <Button text="Login" loading={loading}/>
+        
+      
+      </form>
+
+```
+Register.jsx 
+```js
+  <Button text="Register" loading={loading}/> 
+       
+      </form>
+
+```
+## Delete doc 
+- [link](https://firebase.google.com/docs/firestore/manage-data/delete-data?hl=es#delete_documents)
+- Para eliminar un elemento se utiliza la ID del documento.
+
+Firestore.js
+
+```js
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
+```
+
+```js
+ const deleteData = async(nanoid) => {
+    try {
+     
+      setLoading(valorAnterior => ({ ...valorAnterior, [nanoid]: true }))
+      // Creamos la referencia del documento
+      // doc(db , collecion , id del documento)
+      const docRef = doc(db, 'urls', nanoid);
+     //Eliminamos
+     await deleteDoc(docRef);
+     setData(data.filter(item => item.nanoid !== nanoid))
+   
+    } catch (error) {
+      setError(error.message);
+      console.log(error);
+    } finally {
+     
+      setLoading(valorAnterior => ({ ...valorAnterior, deleteData: false }))
+    }
+  }
+  return {
+    data, error, loading, getData, addData , deleteData
+  }
+
+```
+
+Button.jsx 
+
+
+- Los eventos hay que manipularlo en los componentes que lo generan y no en un componente padre.
+- Por lo tanto la mejor opcion es manejarla con props.
+
+Button.jsx 
+```js
+import ButtonLoading from './ButtonLoading';
+
+const Button = ({ text, color = 'purple'  , loading , onclick}) => {
+    if (loading) return <ButtonLoading/>
+    return (
+        <button
+            onClick={onclick}
+            type="submit"
+            className={`focus:outline-none text-white bg-${color}-700 hover:bg-${color}-800 focus:ring-4 focus:ring-${color}-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-${color}-600 dark:hover:bg-${color}-700 dark:focus:ring-${color}-900 ml-5`}
+        >
+            {text}
+        </button>
+    )
+}
+
+export default Button
+
+```
+
+Home.jsx 
+```js
+import { useEffect, useState } from "react"
+import Button from "../components/Button"
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+
+const Home = () => {
+  const {data , error , loading , getData , addData , deleteData} = useFirestore()
+  const [text , setText] = useState('');
+  useEffect(() => {
+   
+    getData();
+  } , [])
+  if (loading.getData) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+  const handleSubmit =async(e)  => {
+    e.preventDefault();
+    await addData(text)
+    setText('');
+  }
+  const handleClickDelete = async(nanoid) => {
+    await deleteData(nanoid);
+    console.log("eliminado");
+  }
+  return (
+    <>
+    <Title text="Home"/>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="ex: http://youtube.com" 
+        onChange={e => setText(e.target.value)}
+        value={text}
+        />
+          <Button text="ADD URL"  color="blue" loading={loading.addData} />
+    </form>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+          <Button 
+          text="Eliminar"
+          color="red"
+          loading={loading[item.nanoid]} 
+          onclick={() => handleClickDelete(item.nanoid)}
+          />
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
+## Update Doc 
+- [link](https://firebase.google.com/docs/firestore/manage-data/add-data?hl=es#update-data)
+
+useFirestore.js
+
+```js
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+```
+
+```js
+const updateData = async(nanoid , origin) => {
+    try {
+      setLoading(valorAnterior => ({ ...valorAnterior, updateData: true }))
+      // Creamos la referencia del documento
+      // doc(db , collecion , id del documento)
+      const docRef = doc(db, 'urls', nanoid);
+     //Modificamos
+     // updateDoc(referencia , {datos a actualizar})
+     await updateDoc(docRef , {origin });
+     setData(data.map(item => item.nanoid === nanoid ? ({...item , origin}) : item ))
+   
+    } catch (error) {
+      setError(error.message);
+      console.log(error);
+    } finally {
+     
+      setLoading(valorAnterior => ({ ...valorAnterior, updateData: false }))
+    }
+  }
+  return {
+    data, error, loading, getData, addData , deleteData , updateData
+  }
+
+```
+
+Home.jsx 
+```js
+import { useEffect, useState } from "react"
+import Button from "../components/Button"
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+
+const Home = () => {
+  const {data , error , loading , getData , addData , deleteData , updateData} = useFirestore()
+
+  const [text , setText] = useState('');
+  const [newOriginID , setNewOriginID] = useState();
+  useEffect(() => {
+   
+    getData();
+  } , [])
+  if (loading.getData) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+  const handleSubmit =async(e)  => {
+    e.preventDefault();
+    if (newOriginID) {
+      await updateData(newOriginID , text);
+      setNewOriginID('');
+      setText('');
+      return;
+    }
+    await addData(text)
+    setText('');
+  }
+  const handleClickDelete = async(nanoid) => {
+   
+    await deleteData(nanoid);
+    console.log("eliminado");
+  }
+  const handleClickEdit = async(item) => {
+    
+    setText(item.origin);
+    setNewOriginID(item.nanoid)
+  }
+  return (
+    <>
+    <Title text="Home"/>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="ex: http://youtube.com" 
+        onChange={e => setText(e.target.value)}
+        value={text}
+        />
+        {
+          newOriginID ? (
+            <Button text="EDITAR URL"  color="yellow" loading={loading.updateData} />
+          ):   <Button text="ADD URL"  color="blue" loading={loading.addData} />
+        }
+       
+    </form>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+          <Button 
+          text="Eliminar"
+          color="red"
+          loading={loading[item.nanoid]} 
+          onclick={() => handleClickDelete(item.nanoid)}
+          />    
+           <Button 
+          text="Editar"
+          color="yellow"
+          onclick={() => handleClickEdit(item)}
+          />
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
