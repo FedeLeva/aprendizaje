@@ -3506,3 +3506,760 @@ const Home = () => {
 export default Home
 
 ```
+## PROBLEMAS BOTONES
+
+### interpolación colores tailwind
+- [link](https://stackoverflow.com/questions/66330112/tailwind-custom-colors-not-complied)
+
+- Tailwind no compila las clases definidas con la interpolación (dinámicas)
+- Tailwind Lee el archivo sin detectar el valor de una variable pasada (ej. color en el proyecto)
+- TAILWIND solo utiliza las clases que se implementan, si no la detecta en el archivo no la compila y por lo tanto provoca el error que nos estaba pasando.
+
+Button.jsx
+
+```js
+import ButtonLoading from './ButtonLoading';
+
+const Button = ({ text, color = 'purple'  , loading , onclick}) => {
+    if (loading) return <ButtonLoading/>
+    const classButtonBase =
+        "focus:outline-none text-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 ml-5 ";
+
+    let classButtonColor;
+    if (color === "indigo") {
+        classButtonColor =
+            "bg-indigo-700 hover:bg-indigo-800 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-900";
+    }
+    if (color === "pink") {
+        classButtonColor =
+            "bg-pink-700 hover:bg-pink-800 focus:ring-pink-300 dark:bg-pink-600 dark:hover:bg-pink-700 dark:focus:ring-pink-900";
+    }
+    if (color === "purple") {
+        classButtonColor =
+            "bg-purple-700 hover:bg-purple-800 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900";
+    }
+    if (color === "red") {
+        classButtonColor =
+            "bg-red-700 hover:bg-red-800 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900";
+    }
+    if (color === "blue") {
+        classButtonColor =
+            "bg-blue-700 hover:bg-blue-800 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-900";
+    }
+    if (color === "green") {
+        classButtonColor =
+            "bg-green-700 hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-900";
+    }
+    if (color === "yellow") {
+        classButtonColor =
+            "bg-yellow-400 hover:bg-yellow-700 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-900";
+    }
+    return (
+        <button
+            onClick={onclick}
+            type="submit"
+            className={classButtonBase + classButtonColor }
+        >
+            {text}
+        </button>
+    )
+}
+
+export default Button
+
+```
+### Separacion entre botones 
+
+Home.jsx
+```js
+ {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+          <div className="flex space-x-2">
+          <Button 
+          text="Eliminar"
+          color="red"
+          loading={loading[item.nanoid]} 
+          onclick={() => handleClickDelete(item.nanoid)}
+          />    
+           <Button 
+          text="Editar"
+          color="yellow"
+          onclick={() => handleClickEdit(item)}
+          />
+          </div>
+        </div>
+      ))
+    }
+
+```
+## Hook Form Home
+
+utils/formValidate.js
+```js
+export const formValidate = () => {
+    return {
+        required: { value: true, message: 'Campo obligatorio' },
+        patternEmail: {
+            value: /[a-z0-9]+(\.[_a-z0-9]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,15})/,
+            message: "Formato de email incorrecto"
+        },
+        patternURL: { 
+            value: /^https?:\/\/[\w\-]+(\.[\w\-]+)+[\#?]?.*$/,
+            message: "Formato url incorrecto"
+        } ,
+        minLength6: { value: 6, message: "Minimo 6 caracteres" },
+        // v es igual al valor del campo
+        validateTrim: {
+
+            trim: v => {
+                if (!v.trim()) return "Escribe algo";
+                return true;
+            }
+        },
+        validateEquals(value) {
+            return {
+                equals: v => v === value || "No coincide la contraseña"
+            }
+        }
+    }
+}
+
+```
+Home.jsx
+:::tip 
+usamos resetField para resetear el campo y setValue  para asignar el valor de un campo
+:::
+
+```js
+import { useEffect, useState } from "react"
+import Button from "../components/Button"
+import FormError from "../components/FormError"
+import FormInput from "../components/FormInput"
+import Title from "../components/Title"
+import { useFirestore } from "../hooks/useFirestore"
+import { formValidate } from "../utils/formValidate"
+import { useForm } from 'react-hook-form';
+
+const Home = () => {
+
+  const { required , patternURL} = formValidate();
+
+  const { register, handleSubmit,  formState: { errors } , resetField , setValue } = useForm();
+
+  const {data , error , loading , getData , addData , deleteData , updateData} = useFirestore()
+
+ 
+  const [newOriginID , setNewOriginID] = useState();
+  useEffect(() => {
+   
+    getData();
+  } , [])
+  if (loading.getData) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+
+  const onSubmit =async({url})  => {
+    if (newOriginID) {
+      await updateData(newOriginID , url);
+      setNewOriginID('');
+      
+    } else {
+      await addData(url)
+  
+    }
+    // Reseteamos el campo url
+    // resetField("nombrecampo")
+    resetField("url");
+   
+  }
+  const handleClickDelete = async(nanoid) => {
+   
+    await deleteData(nanoid);
+    console.log("eliminado");
+  }
+  const handleClickEdit = async(item) => {
+    //Le asignamos un nuevo valor al campo URL
+    // setValue("nombrecampo" , nuevo valor)
+    setValue("url" , item.origin)
+    
+    setNewOriginID(item.nanoid)
+  }
+  return (
+    <>
+    <Title text="Home"/>
+    <form onSubmit={handleSubmit(onSubmit)}>
+    <FormInput
+          type="text"
+          placeholder="https://youtube.com"
+          {...register("url", {
+            required, pattern: patternURL
+           
+          })}
+          label="Ingresa tu URL"
+          error={errors.url}
+        >
+          <FormError error={errors.url} />
+        </FormInput>
+
+        {
+          newOriginID ? (
+            <Button text="EDITAR URL"  color="yellow" loading={loading.updateData} />
+          ):   <Button text="ADD URL"  color="blue" loading={loading.addData} />
+        }
+       
+    </form>
+    {
+      data.map(item => (
+        <div key={item.nanoid}>
+          <p>{item.nanoid}</p>
+          <p>{item.origin}</p>
+          <p>{item.uid}</p>
+          <div className="flex space-x-2">
+          <Button 
+          text="Eliminar"
+          color="red"
+          loading={loading[item.nanoid]} 
+          onclick={() => handleClickDelete(item.nanoid)}
+          />    
+           <Button 
+          text="Editar"
+          color="yellow"
+          onclick={() => handleClickEdit(item)}
+          />
+          </div>
+        </div>
+      ))
+    }
+    </>
+  )
+}
+
+export default Home
+
+```
+
+## Card flowbite
+
+Home.jsx
+- [Utilizamos window.location ](https://www.w3schools.com/js/js_window_location.asp)
+
+```js
+ // window.location.href =  La url en la que estas
+  const pathURL  = window.location.href + "/"
+  console.log('pathURL' , pathURL )
+  return (
+    <>
+      <Title text="Home" />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <FormInput
+          type="text"
+          placeholder="https://youtube.com"
+          {...register("url", {
+            required, pattern: patternURL
+
+          })}
+          label="Ingresa tu URL"
+          error={errors.url}
+        >
+          <FormError error={errors.url} />
+        </FormInput>
+
+        {
+          newOriginID ? (
+            <Button text="EDITAR URL" color="yellow" loading={loading.updateData} />
+          ) : <Button text="ADD URL" color="blue" loading={loading.addData} />
+        }
+
+      </form>
+      {
+        data.map(item => (
+          <div key={item.nanoid} className="p-6 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 mb-3">
+            <h5 className="mb-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">{pathURL}{item.nanoid}</h5>
+            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{item.origin}</p>
+            <div className="flex space-x-2">
+              <Button
+                text="Eliminar"
+                color="red"
+                loading={loading[item.nanoid]}
+                onclick={() => handleClickDelete(item.nanoid)}
+              />
+              <Button
+                text="Editar"
+                color="yellow"
+                onclick={() => handleClickEdit(item)}
+              />
+            </div>
+          </div>
+        ))
+      }
+    </>
+  )
+
+```
+## handleClickCopy
+
+- [Navigator](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/clipboard)
+- [ClipBoard object](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard)
+
+Home.jsx
+
+```js
+const Home = () => {
+
+  const { required, patternURL } = formValidate();
+
+  const { register, handleSubmit, formState: { errors }, resetField, setValue } = useForm();
+
+  const { data, error, loading, getData, addData, deleteData, updateData } = useFirestore()
+
+  const [newOriginID, setNewOriginID] = useState();
+  const [copy, setCopy] = useState({});
+  useEffect(() => {
+
+    getData();
+  }, [])
+  if (loading.getData) return <p>Loading data...</p>
+  if (error) return <p>{error}</p>
+
+  const onSubmit = async ({ url }) => {
+    if (newOriginID) {
+      await updateData(newOriginID, url);
+      setNewOriginID('');
+
+    } else {
+      await addData(url)
+
+    }
+    // Reseteamos el campo url
+    // resetField("nombrecampo")
+    resetField("url");
+
+  }
+  const handleClickDelete = async (nanoid) => {
+
+    await deleteData(nanoid);
+    console.log("eliminado");
+  }
+  const handleClickEdit = async (item) => {
+    //Le asignamos un nuevo valor al campo URL
+    // setValue("nombrecampo" , nuevo valor)
+    setValue("url", item.origin)
+
+    setNewOriginID(item.nanoid)
+  }
+
+  const pathURL = window.location.href + "/"
+  const handleClickCopy = async (nanoid) => {
+    //Devuelve una promesa por eso usamos el await
+    //writeText(texto)
+    // el texto se copiara en el portapapeles
+    await navigator.clipboard.writeText(pathURL + nanoid)
+    setCopy({ [nanoid]: true })
+  }
+  return (
+    <>
+      <Title text="Home" />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <FormInput
+          type="text"
+          placeholder="https://youtube.com"
+          {...register("url", {
+            required, pattern: patternURL
+
+          })}
+          label="Ingresa tu URL"
+          error={errors.url}
+        >
+          <FormError error={errors.url} />
+        </FormInput>
+
+        {
+          newOriginID ? (
+            <Button text="EDITAR URL" color="yellow" loading={loading.updateData} />
+          ) : <Button text="ADD URL" color="blue" loading={loading.addData} />
+        }
+
+      </form>
+      {
+        data.map(item => (
+          <div key={item.nanoid} className="p-6 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 mb-3">
+            <h5 className="mb-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">{pathURL}{item.nanoid}</h5>
+            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{item.origin}</p>
+            <div className="flex space-x-2">
+              <Button
+                text="Eliminar"
+                color="red"
+                loading={loading[item.nanoid]}
+                onclick={() => handleClickDelete(item.nanoid)}
+              />
+              <Button
+                text="Editar"
+                color="yellow"
+                onclick={() => handleClickEdit(item)}
+              />
+              <Button
+                text={copy[item.nanoid] ? "Copiado" : "Copiar"}
+                color="blue"
+                onclick={() => handleClickCopy(item.nanoid)}
+              />
+            </div>
+          </div>
+        ))
+      }
+    </>
+  )
+}
+
+```
+## Redirect (params en la url) / getDoc
+
+App.jsx 
+
+:::tip Variable en la url 
+- Sintaxis  ruta/:nombrevariable
+- Si entramos a ruta/a58d6
+- el valor de nombrevariable es a58d6
+:::
+
+```js
+return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<LayoutRequireAuth />}>
+          <Route path="/home" element={<Home />}></Route>
+          <Route path="/perfil" element={<Perfil />}></Route>
+        </Route>
+        <Route path="/" element={<LayoutContainerForm />}>
+          <Route path='/register' element={<Register />}></Route>
+          <Route path='/login' element={<Login />}></Route>
+        </Route>
+         {/* :nombrevariable */}
+        <Route path="/home/:nanoid" element={<LayoutRedirect/>}>
+        <Route index element={<NotFound/>} />
+        </Route>
+        <Route path="*" element={<NotFound/>} />
+      </Routes >
+
+    </>
+  )
+
+```
+
+hooks/useFirestore.js
+- [Obtener un documento](https://firebase.google.com/docs/firestore/query-data/get-data?hl=es#get_a_document)
+```js
+ const searchData = async (nanoid) => {
+    try {
+      // Creamos la referencia del documento
+      // doc(db , collecion , id del documento)
+      const docRef = doc(db, 'urls', nanoid);
+      // Buscamos un documento 
+      // where ID = nanoid
+      const docSnap = await getDoc(docRef);
+
+      return docSnap;
+
+    } catch (error) {
+      setError(error.message);
+      console.log(error);
+    }
+  }
+  return {
+    data, error, loading, getData, addData, deleteData, updateData, searchData
+  }
+
+```
+layouts/LayoutRedirect.jsx
+
+- Usamos useParams() para leer los parámetros(variables) de la url.
+- Nos devuelve un objeto donde cada propiedad es un parámetro de la url con su valor correspondiente.
+- Usamos el método exists() que lo contiene el documento extraído de la BD , para comprobar si existe.
+
+```js
+import { useEffect, useState } from "react";
+import { Outlet , useParams} from "react-router-dom"
+import { useFirestore } from "../../hooks/useFirestore"
+import Title from "../Title";
+
+const LayoutRedirect = () => {
+    const params = useParams()
+    const {searchData} = useFirestore();
+    const [loading , setLoading] = useState(true);
+    useEffect(() => {
+        // Nos devuelve una promesa
+        searchData(params.nanoid)
+        // En la respuesta afirmativa , recibimos al documento como parametro.
+        .then(docSnap => {
+
+            // Si el documento existe
+            if (docSnap.exists()){
+                // Redirrecionamos
+                window.location.href =  docSnap.data().origin;
+            } else {
+                setLoading(false);
+            }
+        })
+    } , [])
+
+    if(loading) return <Title text='Cargando redirrecionamiento...'/>
+  return (
+    <div className="mx-auto container">
+        <Outlet/>
+    </div>
+  )
+}
+
+export default LayoutRedirect
+
+```
+
+## Regla de seguridad 
+- [link](https://firebase.google.com/docs/firestore/security/get-started?hl=es)
+- [link 2](https://firebase.google.com/docs/firestore/security/rules-structure?hl=es#basic_readwrite_rules)
+- [link 3](https://firebase.google.com/docs/firestore/security/rules-conditions?hl=es#authentication)
+
+### FireBase
+FireStore DataBase – Reglas
+
+Te aparecía algo asi: 
+
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if
+          request.time < timestamp.date(2022, 5, 28);
+    }
+  }
+}
+
+```
+
+:::tip Observacion 
+- Usamos la versión 2
+- Usan el match para encontrar algo (Si lo encuentra ejecuta el bloque {})
+- El siguiente código especifica que que se puede leer y escribir en la colección durante  30 dias. (empieza el dia que iniciaste la BD)
+```js
+allow read, write: if
+          request.time < timestamp.date(2022, 5, 28);
+
+```
+:::
+
+:::tip allow 
+Los allow se aplican si se cumple la condicion (se encuentra después del if)
+:::
+
+:::tip Division
+- Una regla read se puede dividir en get y list, mientras que una regla write se puede dividir en create, update y delete
+:::
+### Implementamos nuestro match para la colección urls
+- request.auth = Te devuelve la sesion del usuario , en caso de no haber devuelve null.
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /urls/{document=**} {
+      allow read, write: if request.auth !=null 
+    }
+    
+  }
+}
+
+```
+:::tip Observacion 
+- Solo se puede escribir y leer la BD , si existe una sesion del usuario activa.
+:::
+
+### Separar los permisos
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /urls/{document=**} {
+    allow read: if true;
+      allow  write: if request.auth !=null 
+    }
+  }
+}
+
+```
+:::tip Observacion 
+- Todos pueden leer la BD.
+- Solo los que están autenticadas pueden escribir en la BD
+:::
+
+### update , delete , create 
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /urls/{document=**} {
+    allow read: if true;
+    allow  create: if request.auth !=null;
+    allow delete,update: if request.auth.uid == resource.data.uid;
+    }
+  }
+}
+
+```
+
+:::tip Observacion 
+- request.auth = Tiene la información del usuario autenticado y por lo tanto tiene acceso a la propiedad uid que corresponde a la ID del usuario.
+- resource.data = Corresponde a la información del documento . En esta regla se accede al campo uid del documento.
+- Permiso para leer: Todos
+- Permiso para crear : Solo si es autenticado
+- Permiso para eliminar , actualizar: Solo si el uid del documento coincide con el del usuario autenticado.
+
+:::
+### Permiso get y list
+- get : Permiso para solo un documento
+- list : Permiso para un conjunto de documentos
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /urls/{document=**} {
+    allow get: if true;
+    allow  create: if request.auth !=null;
+    allow delete,update , list: if request.auth.uid == resource.data.uid;
+    }
+  }
+}
+
+```
+:::tip Observacion 
+- Permiso para leer SOLO un documento = Todos
+- Permiso para leer  un  CONJUNTO de documentos (Ej. Seleccionar todos los documentos) : Solo si el uid del documento coincide con el del usuario autenticado.
+:::
+
+## Deploy
+- Vamos a usar el hosting de firebase
+
+El comando nos genera una carpeta llamada dist
+```powershell
+npm run build
+```
+
+
+El comando ejecuta lo que contiene carpeta llamada dist, abriendo la aplicación que se pondría en producción.
+```powershell
+npm run preview
+```
+
+:::tip Observacion 
+Si funciona todo, subimos la carpeta dist al hosting.
+:::
+
+
+### En firebase
+- Hosting – get started(comenzar)
+
+Ejecutamos el comando
+```powershell
+npm install -g firebase-tools
+```
+ :::tip warning 
+se instala de manera global , no hace falta ubicarse en el proyecto
+:::
+
+Ejecutamos el siguiente comando en el proyecto:
+ ```powershell
+ firebase init
+ ```
+ :::tip Observacion 
+ - Te genera la configuracion del proyecto
+ :::
+
+  #### opciones
+  :::tip 
+  - Enter para continuar
+  - Espacio para selecionar
+ -  Le das a  continuar(Enter) para que tome el valor por defecto (entre paréntesis)
+ :::
+1. Le das a Si(yes) en comenzar/procesar proyecto
+2. Seleccionas los servicios que utilizaste (con el espacio)
+- En este ejemplo Firestore ( y te trae todas las reglas de seguridad) y Hosting (Configure files for FireBase Hosting and optionally …)
+3. Use an existing Project  --- Enter 
+4. Selecciona el Proyecto de FireBase que vas a hacer deploy – Enter
+5. Luego te va a pedir el nombre del archivo que se va a crear con las reglas de seguridad  (por defecto firestore.rules) --  Enter
+6. What file should be used for Firestore indexes ? – Enter
+7. What do you want to use as your public directory? -- dist
+- Por defecto es public, pero como vamos a subir la carpeta que genera npm run build , ponemos dist (contiene todos los archivos estáticos)
+8. Configure as a single-page-app (rewrite all urls to /index.html)? -- Y
+- Es para reescribir todas las url en el index.html
+- Como es una Single-page Application (todo se renderiza en el index.html , un solo archivo ), le das a si (y)
+9. Set up automatic builds and deploys with Github?  ---- Le das a no (n)
+10. File dist/index.html already exists . Overwrite?  ----------- Le das a no (n)
+
+### ¡Terminamos la configuración!
+
+Si hiciste todo bien en el proyecto se crearon los archivos : firestore.rules , firestore.indexes.json , firebase.json , etc.
+
+Y finalmente hacemos el deploy ejecutando el comando en el proyecto
+
+```powershell
+firebase deploy
+```
+Y ya tenes un dominio
+
+### Archivo 
+firestore.rules:
+- Estan las reglas de seguridad que modificamos
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /urls/{document=**} {
+    allow get: if true;
+    allow  create: if request.auth !=null;
+    allow delete,update , list: if request.auth.uid == resource.data.uid;
+    }
+  }
+}
+
+```
+firebase.json
+- Esta la configuración de la carpeta public
+- Esta la sobreescritura de url
+```js
+
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
+
+```
+### En cada cambio:
+```powershell
+npm run build
+firebase deploy
+```
+- No hace falta hacer el init porque ya esta toda la configuración de firebase.

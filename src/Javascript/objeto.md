@@ -54,7 +54,8 @@ console.log(gato["nombre"]);
 ## CRUD (propiedades)
 ### Los CRUD los podes hacer con el punto (.) o con los corchetes ([]).
 :::tip
-Entre los corchetes podes poner una variable.
+- Entre los corchetes podes poner una variable.
+- Los corchetes aceptan caracteres como el guion , etc.
 
 objeto[variable] = "valor";
 :::
