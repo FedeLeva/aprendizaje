@@ -425,12 +425,12 @@ import { initializeApp } from "firebase/app";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA4c9Yfhz-IIA5HwtLMHrOTGECM8pXVNt8",
-  authDomain: "react-2022-6867d.firebaseapp.com",
-  projectId: "react-2022-6867d",
-  storageBucket: "react-2022-6867d.appspot.com",
-  messagingSenderId: "996540076090",
-  appId: "1:996540076090:web:5946f2c6470b84e6952503"
+  apiKey: "XXX",
+  authDomain: "XXX",
+  projectId: "XXX",
+  storageBucket: "XXX",
+  messagingSenderId: "XXX",
+  appId: "XXX"
 };
 
 // Initialize Firebase
@@ -477,12 +477,12 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA4c9Yfhz-IIA5HwtLMHrOTGECM8pXVNt8",
-  authDomain: "react-2022-6867d.firebaseapp.com",
-  projectId: "react-2022-6867d",
-  storageBucket: "react-2022-6867d.appspot.com",
-  messagingSenderId: "996540076090",
-  appId: "1:996540076090:web:5946f2c6470b84e6952503"
+  apiKey: "XXX",
+  authDomain: "XXX",
+  projectId: "XXX",
+  storageBucket: "XXX",
+  messagingSenderId: "XXX",
+  appId: "XXX"
 };
 
 // Initialize Firebase
@@ -2827,12 +2827,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA4c9Yfhz-IIA5HwtLMHrOTGECM8pXVNt8",
-  authDomain: "react-2022-6867d.firebaseapp.com",
-  projectId: "react-2022-6867d",
-  storageBucket: "react-2022-6867d.appspot.com",
-  messagingSenderId: "996540076090",
-  appId: "1:996540076090:web:5946f2c6470b84e6952503"
+  apiKey: "XXX",
+  authDomain: "XXX",
+  projectId: "XXX",
+  storageBucket: "XXX",
+  messagingSenderId: "XXX",
+  appId: "XXX"
 };
 
 // Initialize Firebase
