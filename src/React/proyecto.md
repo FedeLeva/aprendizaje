@@ -2781,10 +2781,10 @@ Register.jsx
 ### Firestore
 - Trabaja a través de documento
 
-##  Sitio de Firebase
+###  Sitio de Firebase
 
 1. FireStore Database – Create database – en test mode (dura 30 dias) – habilitar
-2. Inicia una colección
+2. Inicia una colección (Iniciar colección = Crear colección)
 :::tip Explicacion como si fuera relacional 
 - Una colección es igual a una tabla.
 - Collection ID = nombre de la tabla
@@ -4172,6 +4172,14 @@ npm install -g firebase-tools
  :::tip warning 
 se instala de manera global , no hace falta ubicarse en el proyecto
 :::
+
+Iniciamos Sesion con el comando: 
+
+
+ ```powershell
+ firebase login
+ ```
+
 
 Ejecutamos el siguiente comando en el proyecto:
  ```powershell

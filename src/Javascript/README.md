@@ -30,4 +30,4 @@ En la consola  de los navegdores aparece los errores.
 
 ## [React](../React)
 
-## [Vue](../vue)
+<!-- ## [Vue](../vue) -->
