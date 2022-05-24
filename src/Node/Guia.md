@@ -1535,8 +1535,12 @@ Se recomienda usar el async
 
 ## pre mongosee
 - [info](https://mongoosejs.com/docs/api.html#schema_Schema-pre)
-- Es  un hook(gancho)  
-- hook : Se ejecuta antes de algo (antes de alguna función/metodo)
+- Es  un hook(gancho) 
+- Sintaxis : Esquema.pre(‘accion’ , function ) 
+- El pree mongosee  sirve para ejecutar una función antes de una acción.
+- La función tiene como parámetro el next que cumple la misma función que el del middleware. (en este caso que ejecute la ‘accion’)
+- La función no debe ser una función flecha ya que utiliza el this para acceder al esquema.
+
 
 Con pre vamos a hacer que  antes que se guarde en la BD, haga alguna acción (en nuestro caso encriptar).
 
@@ -1608,7 +1612,7 @@ userSchema.pre('save' , async function(next){
        const hash = await bycript.hash(user.password , salt);
       
        user.password = hash;
-       // pase a la nombrefuncion()
+       // Que ejecute nombrefuncion()
        next();
    } catch(error) {
        console.log(error);

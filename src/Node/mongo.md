@@ -111,9 +111,15 @@ Usamos variable de entorno  para ocultar la contraseña y el usuario.
 :::
 
 ## Schema
-- Se debe crear un modelo(esquema) por cada colección(tabla) para poder especificar el nombre de cada propiedad y su tipo de valor(tipo de dato) para cada objeto.
+- Se debe crear un esquema por cada colección(tabla) para poder especificar el nombre de cada propiedad y su tipo de valor(tipo de dato) para cada objeto.
+- Es para especificar la estructura de los documentos de la coleccion para luego poder manipular los objetos que contiene la colección a traves del modelo.
+-  Si no se respeta la estructura  del esquema a la hora de crear un documento , se genera un error
 
-- Es para especificar la estructura de la colección para luego poder manipular los objetos que contiene la colección.
+:::warning  El modelo y el esquema no son lo mismo
+  - esquema: Especifica la estructura de los documentos de la coleccion 
+  - modelo: Se crea a partir del esquema y contiene los metodos para manipular la coleccion (leer , borrar , modificar , crear)
+:::
+
 
 1. En el proyecto generamos una carpeta llamada models
 2.  En dicha carpetamos , creamos mascota.js donde va a contener el esquema.
@@ -123,6 +129,8 @@ Usamos variable de entorno  para ocultar la contraseña y el usuario.
 const mongoose = require('mongoose');
 const    { Schema } = mongoose;
 // Definiendo el esquema:
+//El esquema es una nueva instancia de Schema
+// new Schema({ campos del documentos})
 const mascotaSchema = new Schema({
 
     // nombre de propiedad : tipo de valor ,  nombre de propiedad : tipo de valor
@@ -131,11 +139,11 @@ const mascotaSchema = new Schema({
     descripcion: String
 })
 
-// Creamos el esquema/modelo de mascota 
-// model(nombre esquema , esquema)
+// Creamos el modelo de mascota 
+// model(nombre del modelo/coleccion , esquema)
 const Mascota = mongoose.model('Mascota' ,mascotaSchema );
 
-// Exportamos el esquema/modelo
+// Exportamos el modelo
 
 module.exports = Mascota;
 
@@ -145,18 +153,22 @@ module.exports = Mascota;
 // router/Mascota.js
 const express = require('express');
 const router = express.Router();
- // Importamos el esquema
+ // Importamos el modelo
  const Mascota = require('../models/mascota');
 
 ```
 ## find()
+- Es un metodo del modelo
 - Sirve para leer una colección que contiene varios documentos.
 - Trae los documentos de una colección.
 - La función la implementa un modelo.
+ :::tip recordatorio  
+ - El nombre del modelo es el nombre de la coleccion
+ :::
 - Al trabajar con una BD, utilizamos funciones async await para implementarla.
 - [mas info](https://mongoosejs.com/docs/api.html#model_Model.find)
 :::tip Equivalencia a BD relacionales
-- Es como hacer un Select * from tabla
+- Es como hacer un Select * from tabla  (donde tabla es el nombre del modelo Ej. select * from nombreModelo)
 - Donde la tabla es la colección
 - Y los resultados(filas) que genera la consulta , los guarda en un array.
 :::
@@ -422,8 +434,17 @@ module.exports = router;
 ### Guardar/insertar documento - metodo 1:
 - [info](https://mongoosejs.com/docs/models.html)
 
+:::tip Observacion 
+- La nueva instancia del modelo contiene el documento que se va a guardar
+- Lo que recibe en el momento de la instancia es el documento(objeto) que se va a  crear/insertar en la BD
+- La instancia tiene acceso al metodo save() para guardarse en la BD
+:::
+
+
 :::tip 
-Se crea utilizando el esquema
+Se crea utilizando el modelo
+
+Si no se respeta la estructura del  esquema cuando se crea el objeto , se genera un error
 :::
 ```js
  const Mascota = require('../models/mascota');
@@ -463,9 +484,15 @@ router.post('/' , async(req,res) => {
 
 ```
 ### Guardar/insertar documento - metodo 2:
-- Se crea utilizando el esquema:
+- Se crea utilizando el modelo:
 - Se crea y se guarda en la misma línea.
 
+
+:::tip Observacion 
+- Se utiliza el modelo y no una instancia de el.
+- Lo que recibia la nueva instancia del modelo ( ejemplo anterior) , lo recibe el metodo create()
+
+:::
 ```js
 router.post('/' , async(req,res) => {
     const body = req.body;
@@ -488,18 +515,23 @@ router.post('/' , async(req,res) => {
 ## Get único documento
 router/Mascota.js
 - Utilizamos una url dinámica
-- Impleméntamos en la ruta  " :nombrevariable  "
+- Impleméntamos en la ruta  ":nombrevariable"
 
+:::tip Observacion 
+ - el metodo findOne lo contiene el modelo no la instancia
+:::
 ```js
 
 //  "/:nombrevariable"
-//la ruta es /mascotas/valordelnombrevariable
+//la ruta es /mascotas/nombrevariable
 // Ejemplo: http://localhost:3001/mascotas/620a5b245908e57941d2954c
+// El valor de nombrevariable es 620a5b245908e57941d2954c
 router.get('/:id' , async(req, res) => {
    try {
        // req.params.nombrevariable para obtener el valor de dicha variable
        const id = req.params.id;
        // Buscamos la primera mascota que _id sea igual a la const id.
+       // select * from Mascota(nombreModelo) where _id == id;
        const mascotaDB = await Mascota.findOne({_id : id})
        res.render('detalle' ,  {mascota: mascotaDB , error:false})
    } catch (error) {
@@ -609,7 +641,9 @@ views/mascotas.ejs
 - Vamos a usar el verbo http Delete para eliminar.
 - Una petición delete se crea por el método fetch ya que el formulario HTML no lo envia.
 - Vamos a hacer una respuesta en json
-
+:::tip Observacion 
+ - el metodo findByIdAndDelete lo contiene el modelo no la instancia
+:::
 router/Mascota.js
 ```js
 // mascotas/valordelavariableid
@@ -618,6 +652,7 @@ router.delete('/:id' , async(req , res) =>  {
     try {
         // Buscamos la mascota por la _id y lo eliminamos
           // Si se elimina correctamente devuelve el documento que se borro
+          // delete  from Mascota(nombreModelo) where _id = id
         const mascotaDB = await Mascota.findByIdAndDelete({_id : id});
       
         if (mascotaDB) {
@@ -713,7 +748,9 @@ views/detalle.ejs
 - Utilizamos el metodo http put que generalmente se usa para modificar.
 - Vamos a utilizar el body del requirimiento por lo tanto hacer los arreglos necesarios (ver el apartado de bodyparser)
 - El form (HTML) solo soporta GET Y POST . Por lo tanto para usar put vamos a usar javascript(fetch) , igual que como Delete.
-
+:::tip Observacion 
+ - el metodo findByIdAndUpdate lo contiene el modelo no la instancia
+:::
 router/Mascota.js
 ```js
 router.put('/:id' , async(req,res) => {
@@ -723,6 +760,8 @@ router.put('/:id' , async(req,res) => {
         // Encontrar la mascota y modificarla
         // Parametros findByIdAndUpdate(id a buscar , los datos nuevos , una opcion para evitar un warning)
          // devuelve el documento modificado
+         // UPDATE Mascota(nombreModelo) SET nombre = valor de nombre , descripcion = valor de descripcion    WHERE  _id = valor de id; 
+         // los nombres y los nuevo valores de las "columnas" corresponde a las  propiedades y valores del objeto body
        const mascotaBD = await Mascota.findByIdAndUpdate(id , body , {useFindAndModify: false});
       
        res.json({estado: true , mensaje:"Editado"});

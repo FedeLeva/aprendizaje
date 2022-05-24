@@ -34,7 +34,7 @@ module.exports = {
     {
        '/vue/' : ['' , 'proyecto'] ,
        '/React/' : ['' , 'introduccion' , 'formulario' , 'todoApp' , 'api' , 'affect' , 'context' , 'reducer' , 'redux' , 'proyecto'] ,
-      '/Node/': ['' , 'motor' , 'router' , 'mongo' , 'token' , 'Guia'  ] ,
+      '/Node/': ['' , 'motor' , 'router' , 'mongo' , 'token' , 'Guia' , 'apiRest'  ] ,
        '/Java/' : [
             '' ,
             'BD' , 

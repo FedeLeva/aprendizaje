@@ -56,6 +56,14 @@ app.listen(port, () => {
 });
 
 ```
+:::tip Observacion 
+- peticion get a  servicios : http://localhost:3000/servicios
+- peticion get a home (/) : http://localhost:3000/
+
+:::
+
+
+
 :::tip cambios en el index.js
 - Si cambiamos "/" por otra "ruta"
 - Todas las rutas se van a renderizar en “ruta”/direccionDelRouter.

@@ -38,11 +38,11 @@ Algunas ventajas de hacer una API REST:
 
 ## Pasos
 
-### 1- Iniciar el proyecto 
+## 1- Iniciar el proyecto 
 ```powershell
 npm init -y
 ```
-### 2- Configurar scripts
+## 2- Configurar scripts
 
 package.json:
 
@@ -67,7 +67,7 @@ package.json:
 Como se ve, vamos a utilizar un index.js
 :::
 
-### 3- Instalamos las dependencias a utilizar
+## 3- Instalamos las dependencias a utilizar
 :::tip  Observacion
 Con un espacio en blanco separamos las dependencias para instalar varias en solo una linea
 :::
@@ -83,17 +83,17 @@ npm i cors
 ```powershell
 npm i -g nodemon
 ```
-### 4- Creamos el .gitignore
+## 4- Creamos el .gitignore
 ```gitignore
 node_modules
 .env
 
 ```
-### 5- carpetas:
+## 5- carpetas:
  - routes
  - models
 
- ###  6 - index.js:
+ ##  6 - index.js:
 
  :::tip regla API REST 
  Para que sea una API REST, las respuestas deben ser en JSON o XHTML
@@ -142,7 +142,7 @@ Ejemplo: GET http://localhost:3001   SEND
 
 Deberias de recibir la respuesta json.
 
-### 7 - Creamos el archivo .env para las variables de entorno
+## 7 - Creamos el archivo .env para las variables de entorno
 ```js
 USER=
 PASSWORD=
@@ -150,7 +150,7 @@ DBNAME=
 TOKEN_SECRET=
 
 ```
-### 8- Empezamos por las rutas
+## 8- Empezamos por las rutas
 Creamos un archivo auth.js en la carpeta routes
 
 ```js
@@ -204,7 +204,7 @@ app.listen(PORT, () => {
 Probar en POSTMAN:
 
 POST  http://localhost:3001/api/user/register send
-### 9- Configuramos la BD 
+## 9- Configuramos la BD 
 1. Creamos una cuenta de la BD mongo (Database acces)
 :::tip cuenta
 usuario: api-rest
@@ -276,7 +276,7 @@ app.listen(PORT, () => {
 })
 
  ```
- ### 10- Creamos el esquema
+ ## 10- Creamos el esquema
 
  Creamos el archivo User.js dentro de la carpeta models
 :::tip Observacion
@@ -312,7 +312,7 @@ const userSchema = mongoose.Schema({
 module.exports = mongoose.model('User', userSchema);
 
  ```
- ### 11- Vamos a registrar usuarios
+ ## 11- Vamos a registrar usuarios
 
  auth.js:
  ```js
@@ -358,7 +358,7 @@ module.exports = router;
 
  SEND
 
- ### 12- Vamos a realizar validaciones con @hapi/joi
+ ## 12- Vamos a realizar validaciones con @hapi/joi
 
  auth.js
  ```js
@@ -522,7 +522,7 @@ module.exports = router;
 
 Lo probamos en postman.
 
-### 13 - Vamos a cifrar las contraseñas (hash)
+## 13 - Vamos a cifrar las contraseñas (hash)
 
 :::warning ojo
 Nunca pero nunca guardar las contraseñas sin cifrar.
@@ -592,7 +592,7 @@ module.exports = router;
 ```
 Probamos en postman 
 
-### 14- Empezamos a crear el login
+## 14- Empezamos a crear el login
 
 auth.js
 
@@ -698,7 +698,7 @@ body - raw - json
 Generalmente las validaciones deben ir en un archivo aparte.
 :::
 
-### 15- Empezamos a trabajar con el token 
+## 15- Empezamos a trabajar con el token 
 :::tip 
 El desarollador se encarga de la gestion y validacion del token . EL USUARIO NO SABE NADA DEL TOKEN
 :::
@@ -812,7 +812,7 @@ Pero si en el bit secreto de la parte de Verify Signature, ponemos lo que pusimo
 Entonces para verificar desde el servidor , usamos el secreto/String secreto / bit secreto para ver si el token es valido(NO FUE INVENTADO).
 :::
 
-### 16- Empezamos con las rutas protegidas , creamos un middleware
+## 16- Empezamos con las rutas protegidas , creamos un middleware
 
 :::tip explicacion 
 Son rutas restringidas, que depende del token si tenes acceso o no.
@@ -935,7 +935,7 @@ const verifyToken = (req, res, next) => {
 module.exports = verifyToken;
 
 ```
-### 17- Rutas protegidas
+## 17- Rutas protegidas
 Creamos un archivo llamado admin.js en la carpeta routes
 ```js
 const router = require('express').Router();

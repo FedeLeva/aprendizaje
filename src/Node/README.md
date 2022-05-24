@@ -965,3 +965,146 @@ app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
 ```
+
+## Middleware
+
+:::warning 
+Esto es una explicacion(teoria) , para ver ejemplos  , te recomiendo ver las practicas
+:::
+- El middleware seria el firewall 
+- Los middlewares interceptan la peticion antes que llegue al “servidor” ,  se ejecuta antes de la funcion que gestiona la petición.
+- Interceptan la solicitud antes que llegue al servidor para analizarla.
+- Analizan la solicitud y si esta todo correcto , ejecuta la funcion que gestiona dicha solicitud HTTP o tambien puede ejecutar otro middleware en caso que una ruta contenga mas de un middleware.
+- Si una ruta tiene mas de un middleware , vas a ver un array que los contiene.
+
+### Los middleware  es una  funcion con tres parametros
+
+1. req : Requirimiento 
+2. res : Respuesta
+3. next : Seria un metodo 
+- El metodo next()  ejecuta el siguiente middleware(Puede haber varios en un array) o ejecuta la funcion que gestione la peticion (Se suele encontrar en una carpeta llamada controllers)
+
+:::tip Observacion 
+ - Para express todo es un middleware.
+ - Las funciones que gestionan las solicitudes HTTP utilizan los dos primeros parametros.
+:::
+
+### Explicacion 
+- Vamos a usar de  ejemplo un codigo de  la seccion de Router: 
+```js
+const express = require('express');
+// Accedemos a todas las propiedades del Router
+const router = express.Router();
+
+
+router.get('/' , (req , res) => {
+  
+    res.render("index" , {titulo : "mi titulo gato" , descripcion : "Hola Esta es la descripcion"});
+})
+
+router.get('/servicios' , (req,res) => {
+     res.render("servicios" , {tituloServicio : "Este es un mensaje de Servicio"})
+})
+
+module.exports = router;
+
+```
+
+
+
+- El segundo parametro del metodo get/post/delete/etc es la funcion que gestiona la solicitud HTTP. Es la que ejecuta  next() si no encuentra ningun otro middleware adelante de el.
+- La funcion que contiene el segundo parametro , puede irse al tercer parametro si hay middlewares configurados en la ruta.
+- el metodo get/post/delete/etc puede tener un segundo parametro (la funcion que gestiona la solicitud HTTP se desplaza al tercer parametro) para especificar los middlewares
+
+Ejemplos :
+  - Una ruta con un middleware (urlValida)
+```js
+router.post("/" , urlValida , agregarUrl)
+```
+- Una ruta con varios middlewares (Todos en un array y con un orden)
+
+
+```js
+// Tiene un array de middleware
+router.post("/register" ,  [
+    // body ("valor-atributoname" , "mensaje de error").metodo.metodo.metodo....
+    // trim() = Limpia los espacios en blanco del lado izquierda y derecho
+    // notEmpty()  = Para que no venga vacio d
+    // escape() = Para que solo mande caracteres y ignore html
+    body("userName" , "Ingrese un nombre válido").trim().notEmpty().escape(), 
+    //Validamos el email  para que tenga un formato valido
+    body("email" , "Ingrese un email valido").trim().isEmail().normalizeEmail() ,
+    //validamos la contraseña 
+    body("password" , "Contraseña de minimo 6 caracteres").trim().isLength({min:6}).escape()
+    // Hacemos una validacion personalizada para que las dos contraseñas coincida
+    // custom(funcion(value , {req})) 
+    // el value es lo que se evalua (lo que se envia en el formulario)
+    // {req} es para tener acceso al req(requirimiento)
+    .custom((value , {req}) =>{
+        // SI no son iguales
+        
+       if (value !== req.body.repassword) {
+           // No cumple la validacion
+           //Este seria el mensaje de error que se mandaria
+           throw new Error("No coinciden las contraseñas")
+       }
+       // Si cumple la validacion
+       return value
+    })
+] ,  registerUser);
+```
+:::tip Observacion 
+- Cada elemento del array es un middleware 
+- con el metodo next() ejecuto el siguiente middleware
+
+Ej: 
+
+si el middleware de la posicion 0 ejecuta el next() se ejecuta el middleware de la posicion 1
+
+si el middleware de la ultima posicion del array ejecuta el next() , ejecuta la funcion que gestiona la solicitud HTTP.
+:::
+
+### Ejemplo de middleware 
+
+```js
+module.exports = (req , res , next) => {
+   // Si esta autenticado
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    // Si no tiene una sesion activa
+    res.redirect('/auth/login');
+}
+```
+
+
+```js
+const jwt = require('jsonwebtoken')
+
+// middleware para validar token (rutas protegidas)
+const verifyToken = (req, res, next) => {
+  
+    const token = req.header('auth-token')
+    // Si no existe el token
+    if (!token) return res.status(401).json({ error: 'Acceso denegado' })
+    try {
+
+        const verified = jwt.verify(token, process.env.TOKEN_SECRET)
+        
+        req.user = verified
+        // Si la sesion es valida , hacemos el next()
+        next() // continuamos
+    } catch (error) {
+        res.status(400).json({error: 'token no es válido'})
+    }
+}
+
+module.exports = verifyToken;
+```
+
+
+:::tip Observacion 
+- Como se puede ver , los middleware son archivos.js que contienen una funcion que se exporta
+- Esa funcion se inserta como segundo parametro en los metodos (get/post/put/etc) para que se ejecute.
+
+:::
