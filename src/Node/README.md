@@ -643,8 +643,15 @@ app.listen(port , () => console.log('Funciona'))
 ## Archivos estáticos
 - [Info](https://expressjs.com/es/starter/static-files.html)
 -	Para el servicio de archivos estáticos como, por ejemplo, imágenes, archivos CSS y archivos JavaScript, utilice la función express.static  que la brinda el middleware de Express.
+- express.static nos permite habilitar una carpeta que va a contener archivos estaticos
 -	Pase el nombre del directorio que contiene los activos estáticos a la función express.static para empezar directamente el servicio de los archivos.
-
+- La carpeta que contiene los archivos estaticos se suele llamar public 
+- Esta "carpeta" representa el frontend.
+:::tip ¿Que son los archivos estaticos?
+- Son todos los archivos que lo  interpreta  y ejecuta el navegador
+- Ej. HTML , CSS , JS , imagénes.
+:::
+- Todas las demas carpetas es el backend (se ejecuta en el servidor/maquina)
 :::tip Middleware 
 - En palabras simples es una acción que se ejecuta antes de nuestra función de ruta(el servidor responda a la peticion)
 - El middleware  intercepta/atrapa la peticion antes que llegue al servidor.

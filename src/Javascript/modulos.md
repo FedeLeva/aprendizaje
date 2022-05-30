@@ -419,8 +419,9 @@ No existe en localStorage, más adelante veremos que se tiene que capturar el el
 
 ## JSON.stringify() & JSON.parse()
 ### JSON.stringify() 
-- El método JSON.stringify() convierte un objeto o valor de JavaScript en una cadena de texto JSON.
-- Convierte un objeto/otro tipo de dato(averiguar) en String.
+- El método JSON.stringify() convierte un objeto o otro tipo de dato en una cadena de texto JSON.
+- Convierte un objeto/otro tipo de dato(averiguar) en String(JSON)
+- Convierte un objeto/otro tipo de dato en JSON (es un tipo de String)
 
 ```js
 const frutas = [
@@ -444,8 +445,8 @@ localStorage.setItem("frutas" , JSON.stringify(frutas));
 ```
 ## JSON.parse()
 - El método JSON.parse() analiza una cadena de texto como JSON. 
-- Convierte un String en un objeto/otro tipo de dato
-
+- Convierte un String(JSON) en un objeto/otro tipo de dato
+- Convierte un JSON(un tipo de string) en un objeto/otro tipo de dato
 ```js
 •	//Convierte un string en un objeto/otro tipo de dato
 •	//JSON.parse(String);

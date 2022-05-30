@@ -7,6 +7,11 @@
 -	Los objetos son similares a los arreglos (arrays), excepto que en lugar de usar índices para acceder y modificar sus datos, accedes a los datos en objetos a través de propiedades (properties).
 
 
+### A tener en cuenta 
+- Se puede añadir una propiedad entre comillas Ej. "propiedad" : valor
+- Se puede utilizar el  punto o  los corchetes para hacer manipular las propiedades de un objeto.
+- Con los corchetes podes usar variables , espacios en blancos , caracteres especiales , etc
+
 ## Objeto Literal
 
 -	Se denomina objeto literal al objeto cuyas propiedades están declaradas textualmente en el código.
@@ -54,8 +59,7 @@ console.log(gato["nombre"]);
 ## CRUD (propiedades)
 ### Los CRUD los podes hacer con el punto (.) o con los corchetes ([]).
 :::tip
-- Entre los corchetes podes poner una variable.
-- Los corchetes aceptan caracteres como el guion , etc.
+ - Con los corchetes podes usar variables , espacios en blancos , caracteres especiales , etc
 
 objeto[variable] = "valor";
 :::

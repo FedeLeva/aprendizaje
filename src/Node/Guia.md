@@ -1000,9 +1000,9 @@ const urlSchema = new Schema({
  ```js
  const leerUrls = async(req,res) => {
    try {
-       // find(parametros opcionales) Busca todos los documentos de la coleccion(modelo)
+       // find() Busca todos los documentos de la coleccion(modelo)
        // Select * from coleccion
-      // Puede tener parametros para filtrar documentos
+       // coleccion es el nombre del modelo
       // Devuelve un array con objetos de mongoDB
       //lean() convierte un objeto de mongoDB en un objeto JS
       const urls = await Url.find().lean();
@@ -1017,7 +1017,13 @@ const urlSchema = new Schema({
 
  ```
  :::tip opcion Lean
- - La opción Lean le dice a Mongoose que omita la hidratación de los documentos de resultados. Esto hace que las consultas sean más rápidas y requieran menos memoria, pero los documentos de resultados son simples objetos JavaScript, no documentos Mongoose.
+ - La opción Lean le dice a Mongoose que omita la hidratación de los documentos que contiene el  resultado de la consulta. Esto hace que las consultas sean más rápidas y requieran menos memoria, pero los documentos se convierten en simples objetos JavaScript, no documentos Mongoose(objeto mongoDB)
+
+ - Cuando  guardamos un documento en la base de datos, usamos el método save() de  la instancia del modelo. El método save() pertenece a un objeto mongoDB(instancia del modelo) , esa es la diferencia entre un documento como objeto js (usando lean) y un documento como objeto mongoDB.
+
+ - un objeto mongoDB === instancia del modelo
+
+ - La opcion Lean le quita todos los metodos que contiene una instancia del Modelo  . Ej. le quita el metodo save()
  :::
 
  :::tip hidratacion 
@@ -1507,10 +1513,6 @@ module.exports = mongoose.model("User" , UserSchema)
 - Al momento de instanciar un modelo, solo las propiedades que contiene el esquema se van a instanciar y no propiedades inexistentes.
 :::
 
-:::tip lean
-- Cuando lo guardamos en la base de datos, usamos el método save() del modelo.
-- el método save() pertenece a un objeto mongoDB , esa es la diferencia entre un documento como objeto js (usando lean) y un documento como objeto mongoDB.
-:::
 
 ## Cifrar la contraseña
 ### Creamos un hash
@@ -1958,7 +1960,9 @@ Configuramos una validacion del nombre usuario:
 const {body} = require('express-validator');
 // Tiene un array de middleware
 router.post("/register" ,  [
-    // body ("valor-atributoname" , "mensaje de error").metodo.metodo.metodo....
+    
+    // body ("valor-atributoname/propiedad" , "mensaje de error").metodo.metodo.metodo....
+    // valor-atributoname/propiedad = corresponde a una propiedad del body(los datos se envian por el body) que se va a evaluar
     // trim() = Limpia los espacios en blanco del lado izquierda y derecho
     // notEmpty()  = Para que no venga vacio 
     // escape() = Para que solo mande caracteres y ignore html
@@ -1988,7 +1992,8 @@ routes/auth.js
 ```js
 // Tiene un array de middleware
 router.post("/register" ,  [
-    // body ("valor-atributoname" , "mensaje de error").metodo.metodo.metodo....
+   // body ("valor-atributoname/propiedad" , "mensaje de error").metodo.metodo.metodo....
+    // valor-atributoname/propiedad = corresponde a una propiedad del body(los datos se envian por el body) que se va a evaluar
     // trim() = Limpia los espacios en blanco del lado izquierda y derecho
     // notEmpty()  = Para que no venga vacio d
     // escape() = Para que solo mande caracteres y ignore html
@@ -2603,9 +2608,9 @@ const urlSchema = new Schema({
     } ,
     // Referencia a un usuario 
     user: {
-        // De tipo ID de un esquema
+        // Schema.Types.ObjectId  =   De tipo ID de un documento de una coleccion.
          type: Schema.Types.ObjectId,
-         // Nombre del esquema (Referencia del esquema)
+         // ref: nombre de la coleccion(nombre del modelo) al que hace referencia
          ref:"User" ,
          required:true,
     }

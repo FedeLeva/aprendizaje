@@ -366,8 +366,11 @@ module.exports = router;
 const User = require('../models/User');
 const Joi = require('@hapi/joi');
 // Creamos un esquema de validaciones 
-// Las propiedades son las mismas que el esquema de mongoDB
+// Joi.object({objeto})
 const schemaRegister = Joi.object({
+    // Las propiedades son las mismas que el esquema de mongoDB
+// Son las propiedades que se van a evaluar/validar de un objeto(req.body)
+    // propiedad: Joi.validacion.validacion
     // Validaciones: Son string , validar correo , caracteres maximo y minimo , son obligatorio
     name: Joi.string().min(6).max(255).required(),
     email: Joi.string().min(6).max(255).required().email(),

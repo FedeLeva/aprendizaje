@@ -14,11 +14,13 @@
 
 
 3. exportamos el router 
+- Los Router Se exportan por defecto asi cuando se importa se le puede poner el nombre que quieras
+
 
 Rutas.js
 ```js
 const express = require('express');
-// Accedemos a todas las propiedades del Router
+// Accedemos a todas las propiedades y métodos del Router
 const router = express.Router();
 
 

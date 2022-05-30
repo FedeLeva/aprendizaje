@@ -107,11 +107,15 @@ Si la URL funciona en el navegador, es GET.
 LAS API GRATIS Y PUBLICAS (SIN API KEY) A VECES SE CAEN 
 :::
 
+
+:::tip Observacion 
+- La respuesta sin el archivo JSON contiene propiedades como el ok (Si la solicitud se realizo) , el status , la cabecera, etc
+:::
 ```js
 //fetch(path/uri)
 fetch("https://pokeapi.co/api/v2/pokemon/ditto")
 .then((respuesta) => {
-    // Vemos el status (codigo de respuesta ) , cabeceras
+    // Vemos el status (codigo de respuesta ) , propiedad ok , cabeceras
     console.log(respuesta);
    return respuesta.json();
 }).then((data) => console.log(data.forms[0]));

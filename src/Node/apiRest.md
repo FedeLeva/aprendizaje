@@ -667,6 +667,7 @@ const {email , password}  = req.body;
 - SQL : select * from modelo WHERE apellido = “perez”
 :::
 - el metodo findOne lo contiene el modelo , NO LA INSTANCIA.
+- Devuelve una instancia del modelo con el documento seleccionado.
 
 auth.controller.js
 ```js
@@ -783,7 +784,7 @@ export const login = async (req, res) => {
 En el Payload no debe haber información delicada. (contraseñas , etc)
 :::
 
-## Generar Token en el Login.
+## Generar Token en el Login/Register
 
 ### Metodo sign()
 
@@ -797,6 +798,8 @@ sign({payload} , ‘secreto’);
 :::tip Recordatorio 
 - En el proyecto el JWT_SECRET esta en el .env (Es un String con palabras alazar)
 :::
+
+
 
 auth.Controller.js
 ```js
@@ -831,6 +834,7 @@ export const login = async (req, res) => {
 }
 
 ```
+
 
 :::tip Pasos a seguir 
 1.  iniciamos sesion  Y obtenemos un token.
@@ -923,6 +927,40 @@ export const login = async (req, res) => {
 
         return res.status(500).json({ error: "Error de servidor" })
     }
+
+}
+
+```
+### Generamos el token en el register
+auth.controllers.js
+```js
+export const register = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        // lo buscamos en la BD
+        // WHERE email = valorPropiedadEmail
+        let user = await User.findOne({ email: email });
+        // Si existe el usuario
+        if (user) {
+            // Enviamos un objeto como error
+            throw ({ code: 11000 })
+        }
+
+        user = new User({ email, password })
+
+        // Guardamos en la base de datos
+        await user.save();
+        const { token, expiresIn } = generateToken(user.id);
+        return res.status(201).json({ token , expiresIn });
+    } catch (error) {
+        console.log(error.code);
+        // Codigo 11000 = Se duplica la key (el valor no es unico)
+        if (error.code === 11000) {
+            return res.status(400).json({ error: "Ya existe este usuario" });
+        }
+        return res.status(500).json({ error: "Error de servidor" })
+    }
+
 
 }
 
@@ -1055,5 +1093,1160 @@ Prueben enviando en– authorization -- Bearer Token , el token.
         console.log(error);
         return res.status(401).json({error: error.message});
     }
+
+```
+
+
+## Ruta protegida  #2  / Añadir una propiedad al objeto req / findById()
+
+- Sacamos información del payload para pasarla a la ruta protegida.
+
+
+RequireToken.js
+
+```js
+import jwt from 'jsonwebtoken';
+export const requireToken = (req, res, next) => {
+    try {
+        // Accedemos al token que se envio a traves de header
+        let token = req.headers?.authorization;
+        // Si no existe el token
+        if (!token) {
+            throw new Error('No existe el token');
+        }
+        // Conseguimos el token
+        token = token.split(" ")[1];
+        const { uid } = jwt.verify(token, process.env.JWT_SECRET);
+        // Le añadimos una propiedad al req
+        req.uid = uid;
+        //El mismo objeto req se le pasa al siguiente middleware o funcion que gestione la solicitud
+        next();
+    } catch (error) {
+        console.log(error);
+        return res.status(401).json({ error: error.message });
+    }
+}
+
+```
+
+:::tip Observacion 
+Le añadimos la uid(id) del usuario al requerimiento(req) desde el middleware para que luego la función que gestione la solicitud HTTP tenga acceso a la id del usuario.
+:::
+
+
+
+## findById()
+- Lo contiene el modelo, no la instancia
+- Utilizamos el método findById () para buscar un documento por la id. (Parecido a findOne)
+- Recibe la id a buscar
+- Nos devuelve una instancia del modelo que contiene el documento seleccionado.
+- Ej. Ej. User.findById(123) = Select * from User WHERE id = 123;
+
+
+auth.controller.js
+
+```js
+export const infoUser = async (req, res) => {
+    try {
+        // Buscamos un documento por la id 
+//findById(id);
+
+        const user = await User.findById(req.uid);
+        return res.json({user});
+    } catch (error) {
+        return res.status(500).json({error: "error de server"})
+    }
+}
+
+```
+
+:::tip Observacion 
+Accedemos al requirimiento uid que agrego el middleware.
+:::
+
+## Validaciones del token 
+
+### 1 Forma
+tokenManager.js
+```js
+export const errorsValidateToken = error => {
+    switch (error) {
+        case 'invalid signature':
+            return "firma no válida";
+        case 'jwt expired':
+            return "token expirado";
+        case 'invalid token':
+            return "No invente token";
+        default:
+            return "Token no valido";
+    }
+}
+
+```
+
+RequireToken.js
+
+```js
+import { errorsValidateToken } from '../utils/tokenManager.js';
+
+
+
+catch (error) {
+      
+        return res.status(401).json({ error: errorsValidateToken(error.message) });
+    }
+
+```
+
+### 2 Forma
+
+RequireToken.js
+
+```js
+catch (error) {
+        console.log(error.message);
+       const TokenVerificationError = {
+           ["jwt expired"] : "JWT expirado" ,
+           ["invalid token"] : "Token no valido",
+           ["jwt expired"] : "Token expirado",
+           ["invalid signature"] : "Firma no valida",
+           ["jwt malformed"] : "Token no valido" ,
+           ["No existe el token"] : "No existe el token" ,
+       }
+        return res.status(401).json({ 
+            error: TokenVerificationError[error.message] });
+    }
+
+```
+
+:::tip Observacion 
+Le podes quitar los corchetes que funciona igual.
+:::
+
+## Modificamos la información que nos devuelve la ruta protegida y usamos el Lean
+
+:::warning 
+No mostrar la contraseña
+:::
+
+
+### lean()
+- Al realizar una búsqueda con findById (Lo mismo pasa con findOne) nos devuelve una instancia del modelo que contiene varios métodos para manipular el documento seleccionado.
+- Con lean() le quitamos todos los  métodos que corresponden a la instancia del modelo , permitiendo que la consulta sea mas rápido.
+- Ej. con lean() , no contiene el metodo save()
+
+```js
+export const infoUser = async (req, res) => {
+    try {
+        // Buscamos un documento por la id 
+        //findById(id);
+        const user = await User.findById(req.uid).lean();
+        return res.json({email: user.email , uid:user.id});
+    } catch (error) {
+        return res.status(500).json({error: "error de server"})
+    }
+}
+
+```
+
+## Simple HTML
+
+:::warning 
+- Es un ejemplo , luego se elimina del proyecto ya que una API REST no trabaja con el frontend.
+:::
+
+
+
+- En la carpeta public van los archivos estáticos (HTML , CSS , JS , imágenes , etc)
+- Todo el contenido que puede ser accedido desde el navegador va en la carpeta public
+- Trabajar en la carpeta public es trabajar en el frontend.
+- Todo en esta carpeta lo interpreta y ejecuta el navegador.
+- Todas las demás carpetas es el backend (se ejecuta en el servidor/maquina)
+
+
+#### Habilitamos la carpeta public  con el middleware:
+
+index.js 
+```js
+const app = express();
+app.use(express.json());
+app.use('/api' , authRouter)
+//Temporal
+app.use(express.static("public"))
+```
+
+## Solicitudes con fetch 
+
+### Metodo fetch 
+- Utilizamos el fetch para realizar una solicitud HTTP.
+- Por defecto hace una solicitud en GET
+
+### fetch(url , {configuraciones})
+Parametros:
+
+1.	 Una url, donde se va a hacer la solicitud
+2.	 un objeto con configuraciones
+
+
+### Configuraciones del fetch  (Propiedad y valor)
+- method : POST/GET/DELETE/ETC
+- headers: {         el tipo de información que acepta el servidor , datos que se envia por el header     }
+- body: La informacion que se envia
+- credentials : 'valor'   =  Depende del valor, incluye las cookies del navegador en la solicitud.
+
+index.html 
+```html
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login</title>
+    </head>
+    <body>
+        <form id="formLogin">
+            <input type="email" value="correo5@hotmail.com" id="email" />
+            <input type="password" value="123456" id="password" />
+            <button type="submit">Acceder</button>
+        </form>
+
+        <script>
+            const formLogin = document.querySelector("#formLogin");
+            const email = document.querySelector("#email");
+            const password = document.querySelector("#password");
+
+            formLogin.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch("/api/login", {
+                        method: "post",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            email: email.value,
+                            password: password.value,
+                        }),
+                    });
+
+                    console.log(res.ok, res.status);
+                    const { token } = await res.json();
+                    console.log(token);
+                    // Redirreciono a otro sitio
+                    window.location.href = "/protected.html";
+                } catch (error) {
+                    console.log(error);
+                }
+            });
+        </script>
+    </body>
+</html>
+
+```
+:::tip Observacion 
+- Si en el navegador, ingresamos a http://localhost:5000/ , se ejecutaría el index.html (lo ejecuta el navegador)
+
+:::
+
+
+protected.html 
+- Seria la "ruta protegida"
+
+:::tip Configuracion del Header -- Authorization 
+```js
+ headers: {
+                            Authorization: "Bearer " + token,
+                        }
+
+```
+- Sirve para Para enviar el token por el header como estuvimos haciendo, respetando el formato Bearer.
+:::
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ruta protegida</title>
+    </head>
+    <body>
+        <h1>Ruta protegida</h1>
+        <div id="app">
+            <h2>Email</h2>
+            <h3>UID</h3>
+        </div>
+        <button id="logout">Logout</button>
+
+        <script>
+            const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2Mjg2M2NiYzU4ZjQ1MmRkZGIxYjI3M2UiLCJpYXQiOjE2NTM0MTcyNzcsImV4cCI6MTY1MzQxODE3N30.MkwHDyGsMzJ2NtIHTVBh9ibKQjGZLffxhtnsHp72jEI"
+            // Cuando se cargue el DOM
+            document.addEventListener("DOMContentLoaded", async (e) => {
+                const app = document.querySelector("#app");
+                try {
+                    const resToken = await fetch("/api/protected", {
+                        headers: {
+                            Authorization: "Bearer " + token,
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    const data = await resToken.json();
+                    app.innerHTML = `
+                        <h2>Email: ${data.email}</h2>
+                    `;
+                    console.log(data);
+                } catch (error) {
+                    console.log(error);
+                }
+
+           
+            });
+        </script>
+    </body>
+</html>
+
+```
+
+:::tip Observacion 
+- Si en el navegador, ingresamos a http://localhost:5000/protected.html , se ejecutaría el protected.html (lo ejecuta el navegador).
+:::
+
+## Formas de guardar el token 
+
+### localStorage 
+
+index.html 
+```js
+console.log(res.ok, res.status);
+                    const { token } = await res.json();
+                    console.log(token);
+                    // Guardamos en el localStorage;
+                    localStorage.setItem("token" , token);
+                    // Redirreciono a otro sitio
+                     window.location.href = "/protected.html";
+
+```
+
+protected.html
+```js
+  <script>
+            // Obtenemos el valor del localStorage
+            const token =  localStorage.getItem("token");
+
+```
+
+:::warning Desventajas
+Menos seguridad: Se puede acceder desde el navegador.
+:::
+
+###  Cookies (Sin configuraciones)
+
+- Las cookies es  como el localStorage , se guarda con nombre -> valor
+
+### metodo cookie()
+- Sirve para crear una cookie
+- Tiene tres parametros
+1.	nombre de la cookie
+2.	valor de la cookie
+3.	un objeto con las configuraciones (opcional)
+
+index.js
+
+- Habilitamos el módulo de cookieParser para trabajar con cookies.
+
+
+
+```js
+
+import express from 'express';
+// Habilitamos las variables de entorno
+import 'dotenv/config';
+import './database/connectDB.js'
+import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.route.js';
+
+const app = express();
+app.use(express.json());
+// Habilitamos las cookies para poder usarlas
+app.use(cookieParser());
+app.use('/api' , authRouter)
+
+```
+
+
+auth.controller.js
+```js
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        let user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(403).json({ error: "No existe el usuario" })
+        }
+
+        const respuestaPassword = await user.comparePassword(password);
+        if (!respuestaPassword) {
+            return res.status(403).json({ error: "Contraseña incorrecta" })
+        }
+
+        const {token , expiresIn} = generateToken(user.id);
+        // Guardamos una cookie  
+        //cookie(nombre , valor , {configuraciones})
+        res.cookie("token" , token)
+        return res.json({ token , expiresIn })
+    } catch (error) {
+        console.log(error);
+
+        return res.status(500).json({ error: "Error de servidor" })
+    }
+
+}
+
+```
+
+
+
+:::warning Desventajas
+Menos seguridad: Se puede acceder desde el navegador.
+:::
+
+
+
+###  Cookies (Con configuraciones)
+
+- Tiene mas seguridad que la anterior 
+
+####  Configuracion (3 parametro del metodo cookie)
+
+##### httpOnly : boolean
+- true = Solo va a vivir en el HTTP, no se puede acceder desde el frontend.
+##### secure : boolean
+true = Va a vivir en https   false = Va a vivir en http 
+
+auth.controller.js
+```js
+       res.cookie("token" , token , {
+            httpOnly:true,
+            
+            secure: !(process.env.MODO === "developer")
+        })
+
+```
+
+
+- Es mas seguro que localStorage y las cookies sin configuración.
+
+### Obtener el valor de la cookie
+
+RequireToken.js
+
+```js
+export const requireToken = (req, res, next) => {
+    try {
+        // Accedemos al token que se envio a traves de las cookies
+// Obtenemos el valor de una cookie
+// req.cookies.nombrecookie    
+        let token = req.cookies?.token;
+        // Si no existe el token
+        if (!token) {
+            throw new Error('No existe el token');
+        }
+        const { uid } = jwt.verify(token, process.env.JWT_SECRET);
+        // Le añadimos una propiedad al req
+        req.uid = uid;
+        //El mismo objeto req se le pasa al siguiente middleware o funcion que gestione la solicitud
+        next();
+    } catch (error) {
+        console.log(error.message);
+       const TokenVerificationError = {
+           ["jwt expired"] : "JWT expirado" ,
+           ["invalid token"] : "Token no valido",
+           ["jwt expired"] : "Token expirado",
+           ["invalid signature"] : "Firma no valida",
+           ["jwt malformed"] : "Token no valido" ,
+           ["No existe el token"] : "No existe el token" ,
+       }
+        return res.status(401).json({ 
+            error: TokenVerificationError[error.message] });
+    }
+}
+
+```
+
+:::tip Observacion 
+Con req.cookies tenemos acceso a las cookies
+:::
+
+protected.html 
+
+### credentials
+credentials :  ‘include’ =  cada solicitud debe tener una credencial (debe tener cookies) , sirve para enviar las cookies en la petición HTTP , estamos incluyendo las cookies que se encuentran en el navegador en la solicitud (petición HTTP).
+
+```js
+     const resToken = await fetch("/api/protected", {
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        credentials: 'include'
+                    });
+
+```
+
+:::warning Desventajas
+Se puede acceder a la información  , si una pagina sospecha hace alguna solicitud que “incluya cookie”
+:::
+##  Refresh Token
+
+-	Es un token, que refrescara(actualizara) el “token verdadero”.
+-  el Refresh token se guarda en la cookie ya que da lo mismo si lo roban, total no es el “token verdadero”.
+
+
+tokenManager.js
+
+```js
+export const generateRefreshToken = (uid , res) => {
+    // 30 dias  en segundos
+    const expiresIn = 60 * 60 * 24 * 30;
+    try {
+        const refreshToken = jwt.sign({ uid }, process.env.JWT_REFRESH, {expiresIn});
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: !(process.env.MODO === "developer"),
+            // La expiracion de la cookie : recibe el tiempo en milisegundos
+            expires: new Date(Date.now() + expiresIn * 1000)
+        })
+
+    } catch (error) {
+         console.log(error);
+    }
+}
+
+```
+:::tip Observacion 
+- Usamos la variable de entorno JWT_REFRESH que es un String oculto (como el secreto)
+:::
+
+auth.controller.js
+
+- En el login , al momento de crear el "token verdadero" , tambien creamos el refesh token
+
+```js
+import { generateRefreshToken, generateToken } from "../utils/tokenManager.js";
+
+ const { token, expiresIn } = generateToken(user.id);
+        generateRefreshToken(user.id , res);
+
+```
+
+### Acceder al “token verdadero” a través del Refresh Token.
+
+#### Explicacion 
+- Le enviamos una solicitud al servidor con el Refresh Token.
+- El servidor validara el token y si es válido, devolverá el “token verdadero”.
+- el “token verdadero” solo vivirá en la memoria RAM del pc del cliente (es una constante)
+
+
+auth.route.js
+```js
+import { infoUser, login, refreshToken, register } from '../Controllers/auth.controllers.js';
+
+router.get("/refresh" , refreshToken);
+
+```
+
+auth.controller.js
+```js
+import jwt from 'jsonwebtoken';
+
+export const refreshToken = (req, res) => {
+    try {
+        const refreshTokenCookie = req.cookies.refreshToken;
+        // Si no existe el token
+        if (!refreshTokenCookie) {
+            throw new Error("No existe el token");
+        }
+        const { uid } = jwt.verify(refreshTokenCookie, process.env.JWT_REFRESH);
+        // Generamos el "token verdadero"
+        const { token, expiresIn } = generateToken(uid);
+        return res.json({ token, expiresIn })
+
+    } catch (error) {
+        console.log("error de refresh" , error.message , error);
+        const TokenVerificationError = {
+            ["jwt expired"]: "JWT expirado",
+            ["invalid token"]: "Token no valido",
+            ["jwt expired"]: "Token expirado",
+            ["invalid signature"]: "Firma no valida",
+            ["jwt malformed"]: "Token no valido",
+            ["No existe el token"]: "No existe el token",
+        }
+        return res.status(401).json({
+            error: TokenVerificationError[error.message]
+        });
+    }
+}
+
+```
+
+RequireToken.js
+```js
+export const requireToken = (req, res, next) => {
+    try {
+        // Accedemos al token que se envio a traves del header
+        let token = req.headers?.authorization;
+        
+        // Si no existe el token
+        if (!token) {
+            throw new Error('No existe el token');
+        }
+        token = token.split(" ")[1];
+        const { uid } = jwt.verify(token, process.env.JWT_SECRET);
+
+```
+
+### Ahora accedemos al “token verdadero” desde el archivo HTML
+
+protected.html
+```html
+  <script>
+  
+        // Cuando se cargue el DOM
+        document.addEventListener("DOMContentLoaded", async (e) => {
+
+            const app = document.querySelector("#app");
+            try {
+                const resToken = await fetch("/api/refresh", {
+                    method: "GET",
+                    credentials: 'include'
+
+                })
+                const {token} = await resToken.json();
+                const res = await fetch("/api/protected", {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization:"Bearer " + token
+                    },
+              
+                });
+                const data = await res.json();
+                app.innerHTML = `
+                        <h2>Email: ${data.email}</h2>
+                    `;
+                console.log(data);
+            } catch (error) {
+                console.log(error);
+            }
+
+        });
+    </script>
+
+```
+
+
+
+
+#### Explicacion 
+- Esto junto con la implementación de los CORS (más adelante lo vemos) proporcionaría mucha mas seguridad que los otros dos métodos (guardar en la cookie/Localstorage)
+- El usuario malicioso podrá hacer solicitudes, pero no recibirá ninguna respuesta (LA API NO LE DEVOLVERA INFORMACION)
+- Por lo tanto, el usuario malicioso nunca podrá acceder al token verdadero.
+
+## Logout
+auth.controller.js
+```js
+export const logout = (req, res) => {
+    //Eliminamos una cookie 
+    //clearCookie('nombrecookie')
+    res.clearCookie("refreshToken");
+    res.json({ok:true})
+}
+
+```
+auth.route.js
+```js
+import { infoUser, login, logout, refreshToken, register } from '../Controllers/auth.controllers.js';
+
+
+router.get("/logout" , logout);
+
+```
+
+protected.html
+```html
+  <script>
+  
+        // Cuando se cargue el DOM
+        document.addEventListener("DOMContentLoaded", async (e) => {
+
+            const app = document.querySelector("#app");
+            try {
+                const resToken = await fetch("/api/refresh", {
+                    method: "GET",
+                    credentials: 'include'
+
+                })
+                const {token} = await resToken.json();
+                const res = await fetch("/api/protected", {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization:"Bearer " + token
+                    },
+              
+                });
+                const data = await res.json();
+                app.innerHTML = `
+                        <h2>Email: ${data.email}</h2>
+                    `;
+                console.log(data);
+            } catch (error) {
+                console.log(error);
+            }
+
+            const logout = document.querySelector("#logout");
+                logout.addEventListener("click", async () => {
+                    const res = await fetch("/api/logout");
+                    console.log(res.ok, res.status);
+                    if (res.ok) {
+                        window.location.href = "/";
+                    }
+                });
+        });
+    </script>
+
+```
+
+## Refactorizacion
+
+### Errores  al verificar el token
+
+tokenManager.js
+```js
+export const tokenVerificationError = {
+    ["jwt expired"] : "JWT expirado" ,
+    ["invalid token"] : "Token no valido",
+    ["jwt expired"] : "Token expirado",
+    ["invalid signature"] : "Firma no valida",
+    ["jwt malformed"] : "Token no valido" ,
+    ["No existe el token"] : "No existe el token" ,
+}
+
+```
+RequireToken.js
+```js
+
+import { tokenVerificationError } from '../utils/tokenManager.js';
+
+
+catch (error) {
+        console.log(  error.message);
+     
+        return res.status(401).json({ 
+            error: tokenVerificationError[error.message] });
+    }
+
+```
+### middleware requireRefreshToken
+
+
+middlewares/requireRefreshToken.js
+
+- Crea un nuevo requirimiento(req).
+
+```js
+import { tokenVerificationError } from "../utils/tokenManager.js";
+import jwt from 'jsonwebtoken';
+export const requireRefreshToken = (req, res, next) => {
+    try {
+        const refreshTokenCookie = req.cookies.refreshToken;
+        // Si no existe el token
+        if (!refreshTokenCookie) {
+            throw new Error("No existe el token");
+        }
+        const { uid } = jwt.verify(refreshTokenCookie, process.env.JWT_REFRESH);
+        req.uid = uid;
+        next();
+    } catch (error) {
+        console.log(error.message, error);
+        return res.status(401).json({
+            error: tokenVerificationError[error.message]
+        });
+    }
+}
+
+```
+
+auth.controller.js
+- Accedemos al nuevo requirimiento (req).
+
+```js
+export const refreshToken = (req, res) => {
+    try {
+        // Generamos el "token verdadero"
+        const { token, expiresIn } = generateToken(req.uid);
+        return res.json({ token, expiresIn })
+
+    } catch (error) {
+       console.log(error);
+       return res.status(500).json({ error: "error de server" })
+    }
+}
+
+```
+
+auth.route.js
+```js
+import { requireRefreshToken } from '../middlewares/requirerefreshToken.js';
+
+router.get("/refresh" , requireRefreshToken, refreshToken);
+
+```
+
+
+### Separamos el middleware de express-validator del auth.route.js
+
+middleware/validatorManager.js
+```js
+import { validationResult } from "express-validator";
+// importamos el body de express-validator que es un middleware
+import {body} from 'express-validator';
+
+export const validationResultExpress = (req, res, next) => {
+    // Realizamos/Ejecutamos las validaciones de express-validator 
+    //validationResult(req) -- en el req estan los datos que se van a validar
+    // Devuelve el error en caso que exista
+    const error = validationResult(req);
+
+    // Si existen errores
+    if (!error.isEmpty()) {
+        return res.status(400).json({ errors: error.array() })
+    }
+
+    next();
+}
+
+export const bodyLoginValidator = [body('email', 'No es un email').trim().isEmail().normalizeEmail(), body('password', 'formato de password incorrecta').trim().isLength({ min: 6 }), validationResultExpress, validationResultExpress];
+
+export const bodyRegisterValidator = [body('email', 'No es un email').trim().isEmail().normalizeEmail(), body('password', 'formato de password incorrecta').trim().isLength({ min: 6 }), body('password', 'No coinciden las contraseñas').custom((value, { req }) => {
+    if (value !== req.body.repassword) {
+        // No se cumple la validacion
+        // Se lanza un error
+        throw new Error('No coinciden las contraseñas');
+    }
+    // Se cumple la validacion 
+    // Se retorna el valor
+    return value;
+}), validationResultExpress];
+
+```
+
+auth.routes.js
+```js
+import express from 'express';
+import { infoUser, login, logout, refreshToken, register } from '../Controllers/auth.controllers.js';
+import { requireToken } from '../middlewares/RequireToken.js';
+import { requireRefreshToken } from '../middlewares/requirerefreshToken.js';
+import { bodyLoginValidator, bodyRegisterValidator } from '../middlewares/validatorManager.js';
+const router = express.Router();
+
+//post("ruta" , [middlewares] , funcion que gestiona la solicitud)
+router.post("/login", bodyLoginValidator, login)
+router.post("/register", bodyRegisterValidator, register)
+router.get("/protected", requireToken, infoUser);
+router.get("/refresh", requireRefreshToken, refreshToken);
+router.get("/logout", logout);
+export default router;
+
+```
+
+
+## Links (URL)  / Referencia al usuario
+
+### Modelo
+
+model/Link.js
+
+```js
+import mongoose from "mongoose";
+const { Schema } = mongoose;
+
+const linkSchema = new Schema({
+    longLink: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    nanoLink: {
+        type: String,
+        unique: true,
+        required: true,
+        trim: true,
+    },
+    // Creamos una referencia a la id del usuario
+    uid: {
+        // Schema.Types.ObjectId  = Es  una ID de un documento de una coleccion.
+        type: Schema.Types.ObjectId,
+        // ref: nombre de la coleccion(nombre del modelo) al que hace referencia
+        ref: "User",
+        required: true,
+    },
+});
+
+export const Link = mongoose.model("Link", linkSchema);
+
+```
+
+:::tip Explicacion como si fuera relacional
+-	Se hace una referencia a la columna _id(type:Schema.Types.ObjectId) de la tabla User(ref:”User”).
+- _id lo genera mongoDB de manera automática.
+:::
+
+
+### Router
+
+
+index.js
+```js
+import express from 'express';
+// Habilitamos las variables de entorno
+import 'dotenv/config';
+import './database/connectDB.js'
+import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.route.js';
+import authLink from './routes/link.route.js';
+
+const app = express();
+app.use(express.json());
+// Habilitamos las cookies para poder usarlas
+app.use(cookieParser());
+app.use('/api' , authRouter)
+app.use('/api/links' , authLink)
+//Temporal
+app.use(express.static("public"))
+// Si no existe, asigna el puerto 500
+const PORT = process.env.PORT || 5000
+app.listen(PORT , () => console.log('http://localhost:'+PORT));
+
+```
+
+routes/link.route.js
+
+
+:::tip Diferencia entre el metodo put y patch
+- Una petición patch, modifica una parte del “todo” Ej. Modifica una parte del documento de la colección.
+- Una petición put, modifica “todo”. Ej. Modifica todo el documento de la colección.
+:::
+
+```js
+import {Router} from "express";
+import { getLinks } from "../Controllers/link.controller.js";
+const router = Router();
+
+// Rutas 
+
+// PETICION GET A http://localhost:5000/api/links = Acceder a todos los links 
+
+// PETICION GET A http://localhost:5000/api/links/:id = Acceder a un link
+
+// PETICION POST  A http://localhost:5000/api/links = Crea un link 
+
+//PETICION PATCH/PUT A http://localhost:5000/api/links/:id = Actualiza un link
+
+//PETICION DELETE A http://localhost:5000/api/links/:id = Elimina un link
+
+router.get('/' , getLinks);
+
+
+
+export default router;
+
+```
+
+controllers/link.controller.js
+```js
+export const getLinks = (req , res) => {
+    return res.json({ok : true});
+}
+
+```
+
+## Leer / Find()
+
+### Find()
+
+#### Sin parametros
+- Busca todos los documentos de la colección.
+- modelo.find()  = Select * from nombreModelo
+:::tip Recordatorio
+- El nombre del modelo  es el nombre de la colección.
+:::
+
+#### Con un parámetro (Objeto)
+- Sirve para filtrar (Seria como implementar un WHERE)
+- modelo.find({dato:valor}); = Select * from nombreModelo WHERE dato = valor;
+
+
+link.route.js
+```js
+import { requireToken } from "../middlewares/RequireToken.js";
+
+router.get('/' , requireToken , getLinks);
+
+```
+
+link.controller.js
+- Utilizamos el uid del requirimiento que lo inserta el middleware requireToken.
+```js
+export const getLinks = async (req , res) => {
+    try {
+        // select * from Link(nombre modelo) WHERE uid = req.uid
+     const links =    await Link.find({uid : req.uid});
+        return res.json({links});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({error: 'Error de servidor'});
+    }
+    
+}
+```
+
+## Crear
+
+link.route.js
+```js
+import { createLink, getLinks } from "../Controllers/link.controller.js";
+router.get('/' , requireToken , getLinks);
+router.post('/' , requireToken , createLink);
+
+```
+
+link.controller.js
+- Usamos el modulo nanoid para generar un String aleatorio.
+
+```powershell
+npm i nanoid
+```
+
+-  Utilizamos el uid del requirimiento que lo inserta el middleware requireToken.
+```js
+
+import { nanoid } from "nanoid";
+import { Link } from "../models/Link.js";
+
+export const createLink = async (req,res) => {
+    try {
+        const {longLink} = req.body;
+        //nanoid(longitud) = genera un string aleatorio
+        const link = new Link({longLink , nanoLink: nanoid(6) , uid: req.uid});
+        await link.save()
+        return res.json({link});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({error: 'Error de servidor'});
+    }
+}
+
+```
+
+## Validar URL (longLink)
+### Express Validator
+validatorManager.js
+```js
+export const bodyLinkValidator = [
+    body("longLink" , "Formato link incorrecto")
+    .trim()
+    .notEmpty() // No este vacio 
+    ,validationResultExpress
+]
+
+```
+
+link.route.js
+```js
+import { bodyLinkValidator } from "../middlewares/validatorManager.js";
+
+router.get('/' , requireToken , getLinks);
+// (ruta , middleware , middleware , funcion para gestionar la solicitud)
+router.post('/' , requireToken , bodyLinkValidator , createLink);
+
+```
+
+:::tip Observacion 
+- Los middlewares están en el segundo y tercer parámetro del método POST.
+- Primero se ejecuta el del segundo parámetro y luego el tercero…
+:::
+
+### Axios 
+- Vamos a utilizer el modulo de [axios](https://www.npmjs.com/package/axios) (cumple la misma función que fetch)
+
+```powershell
+npm i axios
+```
+validatorManager.js
+
+:::tip Explicacion del codigo 
+- Se hace una petición GET a la url que se pasa en el body de la petición.
+- Si se obtiene una respuesta, la url es válida.
+- Si no se obtiene una respuesta, pasa al catch (el axios genera un error)
+:::
+
+```js
+import axios from 'axios';
+
+export const bodyLinkValidator = [
+    body("longLink" , "Formato link incorrecto")
+    .trim()
+    .notEmpty() // No este vacio 
+    // Funcion personalizada , value es el valor de la propiedad
+    .custom(async value => {
+
+
+
+
+        try {
+
+           //Si la url NO comienza con 'http://' 
+           if (!value.startsWith('http://')) {
+               // Le añadimos el https:// al comienzo
+                   value = 'https://' + value;
+           }
+
+        // Hacemos una peticion a la url
+          // axios.X(url);
+          // X puede ser GET , POST , FETCH , PUT , ETC
+          // Peticion GET a la url 
+          await axios.get(value);
+          return value;
+        } catch (error) {
+            throw new Error('No se encontro el link');
+        }
+       
+    })
+    ,validationResultExpress
+]
+
+```
+
+link.controller.js
+```js
+export const createLink = async (req,res) => {
+    try {
+        let {longLink} = req.body;
+         //Si la url NO comienza con 'http://' 
+         if (!longLink.startsWith('http://')) {
+            // Le añadimos el https:// al comienzo
+            longLink = 'https://' + longLink;
+        }
+
+        //nanoid(longitud) = genera un string aleatorio
+        const link = new Link({longLink , nanoLink: nanoid(6) , uid: req.uid});
+        await link.save()
+        return res.status(201).json({link});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({error: 'Error de servidor'});
+    }
+}
 
 ```

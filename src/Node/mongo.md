@@ -438,6 +438,7 @@ module.exports = router;
 - La nueva instancia del modelo contiene el documento que se va a guardar
 - Lo que recibe en el momento de la instancia es el documento(objeto) que se va a  crear/insertar en la BD
 - La instancia tiene acceso al metodo save() para guardarse en la BD
+- el metodo save() crea la coleccion (si no existe) y el documento
 :::
 
 
@@ -519,6 +520,7 @@ router/Mascota.js
 
 :::tip Observacion 
  - el metodo findOne lo contiene el modelo no la instancia
+ - el metodo findOne Devuelve una instancia del modelo con el documento seleccionado.
 :::
 ```js
 
@@ -760,8 +762,8 @@ router.put('/:id' , async(req,res) => {
         // Encontrar la mascota y modificarla
         // Parametros findByIdAndUpdate(id a buscar , los datos nuevos , una opcion para evitar un warning)
          // devuelve el documento modificado
-         // UPDATE Mascota(nombreModelo) SET nombre = valor de nombre , descripcion = valor de descripcion    WHERE  _id = valor de id; 
-         // los nombres y los nuevo valores de las "columnas" corresponde a las  propiedades y valores del objeto body
+         // UPDATE Mascota(nombreModelo) SET propiedad nombre = valor de propiedad nombre , propiedad descripcion = valor de propiedad descripcion    WHERE  _id = id a buscar; 
+         // las propiedades nombre y descripcion se encuentran en el body (segundo parametro)(es un objeto)
        const mascotaBD = await Mascota.findByIdAndUpdate(id , body , {useFindAndModify: false});
       
        res.json({estado: true , mensaje:"Editado"});
