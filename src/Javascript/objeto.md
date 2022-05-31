@@ -1,7 +1,7 @@
 # Objeto
 
 -	JavaScript está diseñado en un paradigma simple basado en objetos.
--	Un objeto es una colección de propiedades, y una propiedad es una asociación entre un nombre (o clave) y un valor. (CLAVE Y VALOR)
+-	Un objeto es una colección de propiedades, y una propiedad es una asociación entre una clave(nombre)  y un valor. (CLAVE Y VALOR)
 -	El valor de una propiedad puede ser una función, en cuyo caso la propiedad es conocida como un método.
 -	Además de los objetos que están predefinidos en el navegador, puedes definir tus propios objetos.
 -	Los objetos son similares a los arreglos (arrays), excepto que en lugar de usar índices para acceder y modificar sus datos, accedes a los datos en objetos a través de propiedades (properties).
@@ -9,7 +9,7 @@
 
 ### A tener en cuenta 
 - Se puede añadir una propiedad entre comillas Ej. "propiedad" : valor
-- Se puede utilizar el  punto o  los corchetes para hacer manipular las propiedades de un objeto.
+- Se puede utilizar el  punto o  los corchetes para  manipular las propiedades de un objeto.
 - Con los corchetes podes usar variables , espacios en blancos , caracteres especiales , etc
 
 ## Objeto Literal

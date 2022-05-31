@@ -2206,11 +2206,12 @@ export const bodyLinkValidator = [
 
         try {
 
-           //Si la url NO comienza con 'http://' 
-           if (!value.startsWith('http://')) {
+            //Si la url NO comienza con 'https://' 
+           if (!value.startsWith('https://')) {
                // Le añadimos el https:// al comienzo
                    value = 'https://' + value;
            }
+
 
         // Hacemos una peticion a la url
           // axios.X(url);
@@ -2233,11 +2234,12 @@ link.controller.js
 export const createLink = async (req,res) => {
     try {
         let {longLink} = req.body;
-         //Si la url NO comienza con 'http://' 
-         if (!longLink.startsWith('http://')) {
+           //Si la url NO comienza con 'https://' 
+        if (!longLink.startsWith('https://')) {
             // Le añadimos el https:// al comienzo
             longLink = 'https://' + longLink;
         }
+
 
         //nanoid(longitud) = genera un string aleatorio
         const link = new Link({longLink , nanoLink: nanoid(6) , uid: req.uid});
@@ -2250,3 +2252,495 @@ export const createLink = async (req,res) => {
 }
 
 ```
+## Obtener una ruta
+### 1 Alternativa
+link.route.js
+```js
+import { createLink, getLink, getLinks } from "../Controllers/link.controller.js";
+router.get("/:id" , requireToken , getLink);
+
+```
+link.controller.js
+```js
+export const getLink = async (req, res) => {
+    try {
+        // Obtener el valor de la variable(params) de la url
+        const {id} = req.params;
+        // Buscamos por la id
+     const link =    await Link.findById(id);
+        return res.json({link});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({error: 'Error de servidor'});
+    }
+}
+
+```
+Le añadimos algunas validaciones: 
+ ```js
+ export const getLink = async (req, res) => {
+    try {
+        // Obtener el valor de la variable(params) de la url
+        const { id } = req.params;
+        // Buscamos por la id
+        const link = await Link.findById(id);
+        // Si no existe una url
+        if (!link) {
+            return res.status(404).json({ error: ' No existe el link' });
+        }
+        // Si No corresponde a la id del usuario
+        if (!link.uid.equals(req.uid)) {
+            return res.status(401).json({ error: ' No le pertenece este link' });
+        }
+        return res.json({ link });
+    } catch (error) {
+        console.log(error);
+        if (error.kind == "ObjectId") {
+            return res.status(403).json({ error: 'Formato id incorrecto' });
+        }
+
+        return res.status(500).json({ error: 'Error de servidor' });
+    }
+}
+
+ ```
+ ### 2 Alternativa
+
+-  En lugar de buscar por la id, buscamos por el nanoLink y solo devolvemos el longLink
+- Le quitamos la validacion del usuario y la del token, ya que lo puede usar cualquiera.
+
+link.router.js
+```js
+router.get("/:nanolink"  , getLink);
+```
+
+link.controller.js
+```js
+export const getLink = async (req, res) => {
+    try {
+        // Obtener el valor de la variable(params) de la url
+        const { nanolink } = req.params;
+        // Buscamos por el nanolink
+        const link = await Link.findOne({nanoLink: nanolink });
+        // Si no existe una url
+        if (!link) {
+            return res.status(404).json({ error: ' No existe el link' });
+        }
+        return res.json({ longLink: link.longLink });
+    } catch (error) {
+        console.log(error);
+        if (error.kind == "ObjectId") {
+            return res.status(403).json({ error: 'Formato id incorrecto' });
+        }
+
+        return res.status(500).json({ error: 'Error de servidor' });
+    }
+}
+
+```
+
+## Remove
+
+### metodo remove()
+- Pertenece a una instancia del modelo.
+- Elimina el documento que contiene la instancia de la BD.
+- Sirve para eliminar el documento de la BD.
+
+
+link.route.js
+```js
+import { createLink, getLink, getLinks, removeLink } from "../Controllers/link.controller.js";
+
+router.delete("/:id" , requireToken , removeLink);
+
+```
+link.controller.js
+
+```js
+export const removeLink = async (req, res) => {
+    try {
+        // Obtener el valor de la variable(params) de la url
+        const {id} = req.params;
+        // Buscamos por la id
+     const link =    await Link.findById(id);
+   // Si no existe una url
+     if (!link){
+        return res.status(404).json({error: ' No existe el link'});
+     }
+     // Si No corresponde a la id del usuario
+     if (!link.uid.equals(req.uid)) {
+        return res.status(401).json({error: ' No le pertenece este link'});
+     }
+     // Eliminamos de la BD
+     link.remove();
+        return res.json({link});
+    } catch (error) {
+        console.log(error);
+        if (error.kind == "ObjectId") {
+            return res.status(403).json({error: 'Formato id incorrecto'});
+        }
+   
+        return res.status(500).json({error: 'Error de servidor'});
+    }
+}
+
+```
+
+## Validar params (variables de la url)
+- Usamos express-validator.
+- Se remplaza el método body() por el método param().
+- De esta manera se validan/evaluan las propiedades del params.
+
+
+
+validatorManager.js
+```js
+
+import {body , param} from 'express-validator';
+
+export const paramsLinkValidator = [
+    //Se evalua la  propiedad id de params 
+    param("id")
+    .trim()
+    .notEmpty() // No este vacio 
+    .escape() // Escapamos 
+    ,validationResultExpress
+]
+
+```
+
+link.route.js
+```js
+import { bodyLinkValidator, paramsLinkValidator } from "../middlewares/validatorManager.js";
+
+router.delete("/:id" , paramsLinkValidator , requireToken , removeLink);
+
+```
+
+## Modificar
+link.route.js
+```js
+import { createLink, getLink, getLinks, removeLink, updateLink } from "../Controllers/link.controller.js";
+
+router.delete("/:id" ,  requireToken ,  paramsLinkValidator , removeLink);
+router.patch("/:id" ,  requireToken ,   paramsLinkValidator ,bodyLinkValidator , updateLink);
+
+```
+link.controller.js
+
+```js
+export const updateLink = async (req, res) => {
+    try {
+        // Obtener el valor de la variable(param) de la url
+        const { id } = req.params;
+        let { longLink } = req.body;
+         //Si la url NO comienza con 'https://' 
+        if (!longLink.startsWith('https://')) {
+            // Le añadimos el https:// al comienzo
+            longLink = 'https://' + longLink;
+        }
+
+
+        // Buscamos por la id
+        const link = await Link.findById(id);
+        // Si no existe una url
+        if (!link) {
+            return res.status(404).json({ error: ' No existe el link' });
+        }
+        // Si No corresponde a la id del usuario
+        if (!link.uid.equals(req.uid)) {
+            return res.status(401).json({ error: ' No le pertenece este link' });
+        }
+        // Modificamos el valor una propiedad 
+        link.longLink = longLink;
+        await link.save();
+        return res.json({ link });
+    } catch (error) {
+        console.log(error);
+        if (error.kind == "ObjectId") {
+            return res.status(403).json({ error: 'Formato id incorrecto' });
+        }
+
+        return res.status(500).json({ error: 'Error de servidor' });
+    }
+}
+
+```
+
+:::tip Observacion 
+- Modificamos el valor de una propiedad del documento (longLink en este caso) y lo volvemos a guardar (metodo save).
+- MongoDB internamente hace un update de la propiedad que se cambió (en este ejemplo modifica la propiedad longLink con el nuevo valor que ingresamos).
+:::
+
+
+## Redirect (Opcional)
+
+index.js 
+```js
+import express from 'express';
+// Habilitamos las variables de entorno
+import 'dotenv/config';
+import './database/connectDB.js'
+import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.route.js';
+import linkRouter from './routes/link.route.js';
+import redirectRouter from './routes/redirect.route.js';
+
+const app = express();
+app.use(express.json());
+// Habilitamos las cookies para poder usarlas
+app.use(cookieParser());
+app.use('/api' , authRouter)
+app.use('/api/links' , linkRouter)
+app.use('/' ,  redirectRouter)
+
+
+// Si no existe, asigna el puerto 500
+const PORT = process.env.PORT || 5000
+app.listen(PORT , () => console.log('http://localhost:'+PORT));
+
+```
+
+Routes/redirect.route.js
+```js
+import {Router} from "express";
+import { redirectLink } from "../Controllers/redirect.controllers.js";
+
+const router = Router();
+
+router.get('/:nanoLink' , redirectLink);
+
+export default router;
+
+```
+
+Controllers/redirect.controllers.js
+```js
+import { Link } from "../models/Link.js";
+export const redirectLink = async (req, res) => {
+   
+    try {
+        // Obtener el valor de la variable(params) de la url
+        const { nanoLink } = req.params;
+        // Buscamos por el nanolink
+        const link = await Link.findOne({nanoLink: nanoLink });
+        // Si no existe una url
+        if (!link) {
+            return res.status(404).json({ error: ' No existe el link' });
+        }
+        //redirect(url)
+        //redirreciono a la url
+        return res.redirect(link.longLink)
+    } catch (error) {
+        console.log(error);
+        if (error.kind == "ObjectId") {
+            return res.status(403).json({ error: 'Formato id incorrecto' });
+        }
+
+        return res.status(500).json({ error: 'Error de servidor' });
+    }
+}
+
+```
+
+## mongo sanitize
+- [Como evitar inyecciones javascript en mongoDB](https://stackoverflow.com/questions/13436467/javascript-nosql-injection-prevention-in-mongodb)
+- [El problema radica en que se le pueda pasar un objeto a la consulta { $ne: 1 }](https://medium.com/@losantiemi/inyecci%C3%B3n-nosql-en-aplicaciones-de-node-js-y-mongodb-3d4d699f13f4)
+- Pero con Moongose nosotros hicimos un esquema, por ende, como definimos los campos como String, estos serán interpretados como tal, por ende, no se ejecutará el objeto en cuestión.
+
+## Cors
+- Sirven para interferir con la respuesta.
+- La petición siempre llega al servidor, pero en base del dominio que realiza la solicitud, le devuelve o no una respuesta. (A un intruso no le devuelve una respuesta)
+- Sirve para especificar que dominios pueden consumir la APP (en este caso la API REST). Seria una lista blanca de dominios.
+
+
+```powershell
+npm i cors
+```
+
+.env
+```js
+ORIGIN1=http://127.0.0.1:5000
+```
+
+index.js 
+- Habilitamos y configuramos los cors. 
+
+### Cors sin configuracion
+index.js 
+```js
+const app = express();
+// Habilitamos y configuramos los cors.
+app.use(cors())
+
+```
+- En la configuración por defecto ,todos los dominios pueden consumir nuestra API 
+
+### Configuracion de cors
+- La configuración esta en un objeto que se le pasa al metodo cors()
+
+#### Propiedad Origin 
+- Especifica Los dominios que tienen acceso a la APP (en este caso la API REST)
+- La propiedad origin recibe una funcion con dos parametros (origin y callback)
+- Origin : function(origin,callback)
+- El parámetro origin es quien está haciendo la solicitud (el  dominio que hace la petición)
+- [El callback es una función ](https://fedeleva.github.io/aprendizaje/Javascript/promesas.html#callback) que como primer argumento recibe el error y en el segundo argumento la respuesta satisfactoria (funciono correctamente).
+
+```js
+import cors from "cors";
+const app = express();
+// Un array con todos los dominios 
+const whiteList = [process.env.ORIGIN1];
+
+// Habilitamos y configuramos los cors.
+//cors({configuracion})
+app.use(cors({
+    origin: function(origin , callback){
+        // Si el dominio esta autorizado
+        if (whiteList.includes(origin)) {
+            return callback(null, origin);
+        }
+        return callback("Error de CORS origin " + origin + "No autorizado!");
+    }
+    
+}))
+
+```
+:::tip Observacion 
+Cuando se hace una solicitud desde el mismo dominio que contiene la app, el origin es undefined
+:::
+
+
+### Lo dejamos configurado para dos dominios
+
+.env 
+```js
+ORIGIN1=
+ORIGIN2=
+
+```
+
+Index.js
+```js
+const whiteList = [process.env.ORIGIN1 , process.env.ORIGIN2];
+```
+
+## Deploy Heroku
+
+### A tener en cuenta 
+
+#### El puerto 
+- Cada hosting tiene un Puerto en especifico.
+index.js
+```js
+// Si no existe, asigna el puerto 500
+const PORT = process.env.PORT || 5000
+app.listen(PORT , () => console.log('http://localhost:'+PORT));
+
+```
+
+#### . gitignore 
+- Los hosting descargan los modulos y configuran las variables de entorno.
+```js
+node_modules
+.env
+
+```
+
+#### Script 
+- El script start es el que ejecuta heroku al iniciar el proyecto.
+```js
+ "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+
+```
+
+### En Heroku 
+- Utilizaremos  Heroku CLI  para el deploy
+
+Pasos:
+1. Iniciamos sesion
+2. Creamos una aplicación (todo por defecto)
+3. Iniciamos sesion 
+```powershell
+Heroku login
+```
+4. 	Inicializamos el proyecto
+
+- En la ubicación del proyecto:
+
+```powershell
+git init
+heroku git:remote -a XXX
+XXX = El nombre de la aplicacion
+```
+5. Hacemos el deploy haciendo el push 
+```powershell
+git add .
+Git commit -m “mensaje”
+git push heroku X
+X = master/main dependiendo de que rama principal tenga.
+```
+6. Configuramos las variables de entorno (config -- config VARS -- Reveal config vars)
+- Copiamos todas las variables de .env menos el modo.
+
+### Cambios del proyecto 
+- Heroku distingue mayuscula con minúscula , ojo con el nombre de los archivos o carpetas en las importaciones y exportaciones
+
+index.js 
+```js
+import cookieParser from 'cookie-parser';
+import authRouter from './Routes/auth.route.js';
+import linkRouter from './Routes/link.route.js';
+import redirectRouter from './Routes/redirect.route.js';
+
+```
+
+auth.route.js
+```js
+import { requireRefreshToken } from '../middlewares/requireRefreshToken.js';
+```
+
+### LISTO!
+
+- More -- Views Logs =  Abrir la consola
+
+## Deploy con Render
+- [Es una alternativa a Heroku](https://render.com/)
+
+:::tip Postman 
+- Postman hace solicitudes sin dominio(origin)
+- Postman cuando realiza alguna solicitud simula que el origin es el mismo que el de la App (Api REST) (Se comunica a si mismo).
+:::
+
+-  Como el valor de origin es undefined cuando el origin es el mismo que el de la API, modificamos los cors:
+
+```js
+// Un array con todos los dominios 
+const whiteList = [process.env.ORIGIN1 , process.env.ORIGIN2 , undefined];
+
+```
+
+### En el sitio web
+1. Iniciamos sesion 
+2. Seleccionamos Web services
+3. Vinculamos con un repositorio de Github
+- Para esto ya debemos tener el proyecto en un repositorio.
+
+Opciones :
+- Name = Nombre del proyecto
+- Environment = Con que tecnología trabajamos (Node)
+- Branch = La RAMA con la que se hace el deploy.
+- Build Command = El comando para construir , ponemos npm install.
+- Start Command = El comando para levantar el servidor (El script start) , ponemos npm start
+- Opciones ADVANCED = Te permite agregar variables de entorno , Configuramos las variables de entorno (Todas menos el modo).
+:::tip 
+Start es el único comando que no se requiere la palabra run 
+:::
+
+4. Por ultimo le damos a Create Web Service
+
+
+### Listo!!

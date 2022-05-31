@@ -996,6 +996,19 @@ Esto es una explicacion(teoria) , para ver ejemplos  , te recomiendo ver las pra
  - Las funciones que gestionan las solicitudes HTTP utilizan los dos primeros parametros.
 :::
 
+:::tip Middlewares de expresss
+
+- El metodo use() de express es para ejecutar/utilizar un middleware.
+- Lo que recibe es el middleware a ejecutarse
+
+Ejemplo:
+
+```js
+const app = express()
+app.use(express.static("public"))
+```
+:::
+
 ### Explicacion 
 - Vamos a usar de  ejemplo un codigo de  la seccion de Router: 
 ```js
@@ -1115,3 +1128,19 @@ module.exports = verifyToken;
 - Esa funcion se inserta como segundo parametro en los metodos (get/post/put/etc) para que se ejecute.
 
 :::
+
+
+
+
+## Status
+- Cada respuesta tiene un status
+- El Status es el codigo de respuesta
+-  Indica si la petición ha sido exitosa, o no, y debido a que.
+- [link1](https://developer.mozilla.org/es/docs/Web/HTTP/Status)
+- [link2](https://http.cat/)
+
+La respuesta tiene el status 400
+```js
+res.status(400).json({error: 'token no es válido'})
+```
+Por defecto , la respuesta tiene el status 200
